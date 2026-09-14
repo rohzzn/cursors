@@ -1,0 +1,14 @@
+* text=auto
+
+# Windows scripts and sources keep CRLF so they behave the same when checked out anywhere.
+*.cs     text eol=crlf
+*.ps1    text eol=crlf
+*.csproj text eol=crlf
+*.manifest text eol=crlf
+*.recipe text eol=crlf
+
+# Cursor and image assets
+*.cur binary
+*.ani binary
+*.ico binary
+*.png binary

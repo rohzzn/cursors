@@ -1,0 +1,630 @@
+# Bundled cursor library recipe, consumed by tools/build-packs.ps1 (PackTool build).
+#
+# from = windows <dir>   upstream Windows build; roles come from its install.inf (or file names with detect = names)
+# from = xcursor <dir>   Linux Xcursor theme folder, converted to .cur/.ani
+# from = png             assembled from PNG icons listed per role (pngroot = folder)
+# from = derive <id>     recolored variant of an already-built pack (neon = #RRGGBB)
+#
+# Role overrides: <Role> = file <name> | x11 <name> | png <file> [hot=..] [spin=n,ms] [pixel] | @<OtherRole> | none
+# Paths are relative to the downloaded sources root (raw/ and work/, see tools/SOURCES.md).
+# Sections starting with "_" are templates for include = ...; section order is the order within a category.
+
+# ---- Templates ----------------------------------------------------------------------------------------
+
+[_ful1e5]
+author = Kaiz Khatri (ful1e5)
+license = GPL-3.0-only
+variant = Regular
+
+[_hackneyed]
+author = Richard Ferreira
+license = X11-distribute-modifications-variant
+url = https://gitlab.com/Enthymeme/hackneyed-x11-cursors
+detect = names
+variant = Standard
+Arrow = file default.cur
+Help = file help.cur
+AppStarting = file progress.ani
+Wait = file wait.ani
+Crosshair = file crosshair.cur
+IBeam = file text.cur
+NWPen = file pencil.cur
+No = file not-allowed.cur
+SizeNS = file ns-resize.cur
+SizeWE = file ew-resize.cur
+SizeNWSE = file nwse-resize.cur
+SizeNESW = file nesw-resize.cur
+SizeAll = file move.cur
+UpArrow = file sb_up_arrow.cur
+Hand = file pointer.cur
+
+[_retrosmart]
+author = Manuel Domínguez López, useless-anvil
+license = GPL-3.0-only
+url = https://github.com/useless-anvil/retrosmart-cursor
+detect = names
+Arrow = file arrow.cur
+Help = file help.cur
+AppStarting = file appstarting.ani
+Wait = file wait.ani
+Crosshair = file crosshair.cur
+IBeam = file ibeam.cur
+NWPen = file nwpen.cur
+No = file no.cur
+SizeNS = file sizens.cur
+SizeWE = file sizewe.cur
+SizeNWSE = file sizenwse.cur
+SizeNESW = file sizenesw.cur
+SizeAll = file sizeall.cur
+UpArrow = file uparrow.cur
+Hand = file hand.cur
+
+[_kenney]
+author = Kenney (kenney.nl)
+license = CC0-1.0
+url = https://kenney.nl/assets/cursor-pack
+from = png
+pngroot = work/kenney/kenney_cursor-pack/PNG/Outline/Double
+pngsizes = 32,48,64
+
+[_comix]
+author = Jens Luetkens, Ben Finney
+license = GPL-3.0-or-later
+url = https://gitlab.com/limitland/comixcursors
+notes = Converted from the Debian comixcursors-righthanded 0.9.1 Xcursor theme
+
+[_catppuccin]
+author = Catppuccin, based on Volantes by varlesh
+license = GPL-2.0-only
+url = https://github.com/catppuccin/cursors
+notes = Converted from the Xcursor theme to .cur/.ani
+
+[_translucent]
+author = silica-dev, based on Bibata by Kaiz Khatri (ful1e5)
+license = GPL-3.0-only
+url = https://github.com/silica-dev/Bibata_Cursor_Translucent
+notes = Converted from the Xcursor theme to .cur/.ani
+SizeAll = x11 fleur
+
+[_neon]
+author = Kaiz Khatri (ful1e5); neon glow by Cursors
+license = GPL-3.0-only
+url = https://github.com/ful1e5/Bibata_Cursor
+notes = Derived from Bibata Modern Classic: outline recolored and a glow added
+from = derive bibata-modern-classic
+
+# ---- Minimal ------------------------------------------------------------------------------------------
+
+[bibata-modern-classic]
+include = _ful1e5
+name = Bibata Modern Classic
+category = Minimal
+url = https://github.com/ful1e5/Bibata_Cursor
+from = windows work/ful1e5__Bibata_Cursor/Bibata-Modern-Classic-Windows
+
+[bibata-modern-ice]
+include = _ful1e5
+name = Bibata Modern Ice
+category = Minimal
+url = https://github.com/ful1e5/Bibata_Cursor
+from = windows work/ful1e5__Bibata_Cursor/Bibata-Modern-Ice-Windows
+
+[xcursor-pro-dark]
+include = _ful1e5
+name = XCursor Pro Dark
+category = Minimal
+url = https://github.com/ful1e5/XCursor-pro
+from = windows work/ful1e5__XCursor-pro/XCursor-Pro-Dark-Windows
+
+[xcursor-pro-light]
+include = _ful1e5
+name = XCursor Pro Light
+category = Minimal
+url = https://github.com/ful1e5/XCursor-pro
+from = windows work/ful1e5__XCursor-pro/XCursor-Pro-Light-Windows
+
+[phinger-dark]
+name = Phinger Dark
+category = Minimal
+author = Philipp Schaffrath (phisch)
+license = CC-BY-SA-4.0
+url = https://github.com/phisch/phinger-cursors
+notes = Converted from the Xcursor theme to .cur/.ani
+from = xcursor work/phinger-full/phinger-cursors-dark/cursors
+
+[phinger-light]
+name = Phinger Light
+category = Minimal
+author = Philipp Schaffrath (phisch)
+license = CC-BY-SA-4.0
+url = https://github.com/phisch/phinger-cursors
+notes = Converted from the Xcursor theme to .cur/.ani
+from = xcursor work/phinger-full/phinger-cursors-light/cursors
+
+[bibata-original-classic]
+include = _ful1e5
+name = Bibata Original Classic
+category = Minimal
+url = https://github.com/ful1e5/Bibata_Cursor
+from = windows work/ful1e5__Bibata_Cursor/Bibata-Original-Classic-Windows
+
+[bibata-original-ice]
+include = _ful1e5
+name = Bibata Original Ice
+category = Minimal
+url = https://github.com/ful1e5/Bibata_Cursor
+from = windows work/ful1e5__Bibata_Cursor/Bibata-Original-Ice-Windows
+
+[breezex-black]
+include = _ful1e5
+name = BreezeX Black
+category = Minimal
+url = https://github.com/ful1e5/BreezeX_Cursor
+from = windows work/ful1e5__BreezeX_Cursor/BreezeX-Black-Windows
+
+[breezex-light]
+include = _ful1e5
+name = BreezeX Light
+category = Minimal
+url = https://github.com/ful1e5/BreezeX_Cursor
+from = windows work/ful1e5__BreezeX_Cursor/BreezeX-Light-Windows
+
+[notwaita-black]
+include = _ful1e5
+name = Notwaita Black
+category = Minimal
+author = donut2; Windows build by Kaiz Khatri (ful1e5)
+license = LGPL-3.0-only OR CC-BY-SA-3.0
+url = https://github.com/ful1e5/notwaita-cursor
+from = windows work/ful1e5__notwaita-cursor/Notwaita-Black-Windows
+
+[notwaita-white]
+include = _ful1e5
+name = Notwaita White
+category = Minimal
+author = donut2; Windows build by Kaiz Khatri (ful1e5)
+license = LGPL-3.0-only OR CC-BY-SA-3.0
+url = https://github.com/ful1e5/notwaita-cursor
+from = windows work/ful1e5__notwaita-cursor/Notwaita-White-Windows
+
+[nordzy]
+name = Nordzy
+category = Minimal
+author = Guillaume Boehm, based on Vimix
+license = GPL-3.0-only
+url = https://github.com/guillaumeboehm/Nordzy-cursors
+from = windows work/guillaumeboehm__Nordzy-cursors/Nordzy-cursors_windows
+
+[nordzy-white]
+name = Nordzy White
+category = Minimal
+author = Guillaume Boehm, based on Vimix
+license = GPL-3.0-only
+url = https://github.com/guillaumeboehm/Nordzy-cursors
+from = windows work/guillaumeboehm__Nordzy-cursors/Nordzy-cursors-white_windows
+
+[aosp]
+name = Android
+category = Minimal
+author = The Android Open Source Project; Windows build by Tech-Tac
+license = Apache-2.0
+url = https://github.com/Tech-Tac/aosp-cursors
+from = windows work/Tech-Tac__aosp-cursors/aosp-cursors-windows-1.3.1
+
+[modern-inverted]
+name = Modern Inverted
+category = Minimal
+author = emvaized (Max Tsyba)
+license = MIT
+url = https://github.com/emvaized/modern_inverted_mouse_cursors
+from = windows raw/emvaized__modern_inverted_mouse_cursors/src
+detect = names
+Arrow = file arrow.cur
+Help = file help.cur
+AppStarting = file working.ani
+Wait = file busy.ani
+Crosshair = file cross.cur
+IBeam = file beam.cur
+NWPen = file pen.cur
+No = file unavailable.cur
+SizeNS = file vertical.cur
+SizeWE = file horizontal.cur
+SizeNWSE = file diagonal_1.cur
+SizeNESW = file diagonal_2.cur
+SizeAll = file move.cur
+UpArrow = file special.cur
+Hand = file link.cur
+
+[vimix]
+name = Vimix
+category = Minimal
+author = Vince Liuice, based on Capitaine
+license = GPL-3.0-only
+url = https://github.com/vinceliuice/Vimix-cursors
+from = windows raw/vinceliuice__Vimix-cursors/.windows
+
+[fuchsia]
+include = _ful1e5
+name = Fuchsia
+category = Minimal
+url = https://github.com/ful1e5/fuchsia-cursor
+from = windows work/ful1e5__fuchsia-cursor/Fuchsia-Windows
+# Fuchsia's location and person artwork is swapped upstream.
+Pin = file Person.cur
+Person = file Pin.cur
+
+[googledot-black]
+include = _ful1e5
+name = Google Dot Black
+category = Minimal
+url = https://github.com/ful1e5/Google_Cursor
+from = windows work/ful1e5__Google_Cursor/GoogleDot-Black-Windows
+variant = -Large-
+merge = -Extra-Large-
+
+[googledot-white]
+include = _ful1e5
+name = Google Dot White
+category = Minimal
+url = https://github.com/ful1e5/Google_Cursor
+from = windows work/ful1e5__Google_Cursor/GoogleDot-White-Windows
+variant = -Large-
+merge = -Extra-Large-
+
+# ---- macOS style --------------------------------------------------------------------------------------
+
+[macos]
+include = _ful1e5
+name = macOS
+category = macOS
+url = https://github.com/ful1e5/apple_cursor
+from = windows work/ful1e5__apple_cursor/macOS-Windows
+keep = 22,32,43,64,86,171
+
+[macos-white]
+include = _ful1e5
+name = macOS White
+category = macOS
+url = https://github.com/ful1e5/apple_cursor
+from = windows work/ful1e5__apple_cursor/macOS-White-Windows
+keep = 22,32,43,64,86,171
+
+[whitesur]
+name = WhiteSur
+category = macOS
+author = Vince Liuice, based on Capitaine
+license = GPL-3.0-only
+url = https://github.com/vinceliuice/WhiteSur-cursors
+notes = Converted from the Xcursor theme to .cur/.ani
+from = xcursor raw/vinceliuice__WhiteSur-cursors/dist/cursors
+
+[capitaine]
+name = Capitaine
+category = macOS
+author = Keefer Rourke, based on KDE Breeze
+license = LGPL-3.0-or-later
+url = https://github.com/keeferrourke/capitaine-cursors
+from = windows raw/keeferrourke__capitaine-cursors/.windows
+
+# ---- Retro & classic ----------------------------------------------------------------------------------
+
+[hackneyed]
+include = _hackneyed
+name = Hackneyed
+category = Retro
+from = windows work/Enthymeme__hackneyed-x11-cursors/Hackneyed-Windows-0.9.3
+
+[hackneyed-dark]
+include = _hackneyed
+name = Hackneyed Dark
+category = Retro
+from = windows work/Enthymeme__hackneyed-x11-cursors/Hackneyed-Dark-Windows-0.9.3
+
+[retrosmart-win]
+include = _retrosmart
+name = Retrosmart Win
+category = Retro
+from = windows work/rs/win
+
+[retrosmart-mac]
+include = _retrosmart
+name = Retrosmart Mac
+category = Retro
+from = windows work/rs/mac
+
+[retrosmart-terminal]
+include = _retrosmart
+name = Retrosmart Terminal
+category = Retro
+from = windows work/rs/term
+AppStarting = file appstarting.cur
+Wait = file wait.cur
+
+# ---- Pixel & gaming -----------------------------------------------------------------------------------
+
+[kenney-pixel]
+name = Pixel
+category = Pixel & Gaming
+author = Kenney (kenney.nl)
+license = CC0-1.0
+url = https://kenney.nl/assets/cursor-pixel-pack
+from = png
+pngroot = work/kenney/kenney_cursor-pixel-pack/Tiles
+pixel = true
+pngsizes = 32,48,64,96
+Arrow = png tile_0168 hot=tl
+Help = png tile_0181 hot=tl
+AppStarting = png tile_0167 hot=tl
+Wait = png tile_0013 hot=center spin=4,140
+Crosshair = png tile_0057 hot=center
+IBeam = png tile_0140 hot=center
+NWPen = png tile_0146 hot=bl
+No = png tile_0015 hot=center
+SizeNS = png tile_0000 hot=center
+SizeWE = png tile_0001 hot=center
+SizeNWSE = png tile_0003 hot=center
+SizeNESW = png tile_0002 hot=center
+SizeAll = png tile_0005 hot=center
+UpArrow = png tile_0070 hot=top
+Hand = png tile_0134 hot=top
+
+[kenney-adventure]
+include = _kenney
+name = Adventure
+category = Pixel & Gaming
+Arrow = png tool_sword_b hot=tl
+Help = png cursor_help hot=tl
+AppStarting = png cursor_busy hot=tl
+Wait = png busy_hourglass hot=center
+Crosshair = png target_round_b hot=center
+IBeam = png bracket_b_vertical hot=center
+NWPen = png drawing_pencil hot=bl
+No = png disabled hot=center
+SizeNS = png resize_b_vertical hot=center
+SizeWE = png resize_b_horizontal hot=center
+SizeNWSE = png resize_b_diagonal_mirror hot=center
+SizeNESW = png resize_b_diagonal hot=center
+SizeAll = png resize_b_cross hot=center
+UpArrow = png arrow_n hot=top
+Hand = png gauntlet_point hot=tl
+
+[kenney-scifi]
+include = _kenney
+name = Sci-Fi
+category = Pixel & Gaming
+Arrow = png pointer_scifi_b hot=tl
+Help = png mark_question_pointer_b hot=tl
+AppStarting = png busy_circle_fade hot=center spin=24,40
+Wait = png busy_circle hot=center spin=24,40
+Crosshair = png target_b hot=center
+IBeam = png line_vertical hot=center
+NWPen = png drawing_pen hot=bl
+No = png disabled hot=center
+SizeNS = png resize_d_vertical hot=center
+SizeWE = png resize_d_horizontal hot=center
+SizeNWSE = png resize_d_diagonal_mirror hot=center
+SizeNESW = png resize_d_diagonal hot=center
+SizeAll = png resize_d_cross hot=center
+UpArrow = png navigation_n hot=top
+Hand = png hand_thin_point hot=top
+
+[future]
+name = Future
+category = Pixel & Gaming
+author = yeyushengfan258, based on Capitaine
+license = GPL-3.0-only
+url = https://github.com/yeyushengfan258/Future-cursors
+notes = Converted from the Xcursor theme to .cur/.ani
+from = xcursor raw/yeyushengfan258__Future-cursors/dist/cursors
+
+[xcursor-pro-red]
+include = _ful1e5
+name = XCursor Pro Red
+category = Pixel & Gaming
+url = https://github.com/ful1e5/XCursor-pro
+from = windows work/ful1e5__XCursor-pro/XCursor-Pro-Red-Windows
+
+# ---- Neon & color -------------------------------------------------------------------------------------
+
+[neon-cyan]
+include = _neon
+name = Neon Cyan
+category = Neon
+neon = #00E5FF
+
+[neon-magenta]
+include = _neon
+name = Neon Magenta
+category = Neon
+neon = #FF3DD8
+
+[neon-lime]
+include = _neon
+name = Neon Lime
+category = Neon
+neon = #8CFF3F
+
+[bibata-modern-amber]
+include = _ful1e5
+name = Bibata Amber
+category = Neon
+url = https://github.com/ful1e5/Bibata_Cursor
+from = windows work/ful1e5__Bibata_Cursor/Bibata-Modern-Amber-Windows
+
+[bibata-dodgerblue]
+include = _ful1e5
+name = Bibata Dodger Blue
+category = Neon
+url = https://github.com/ful1e5/Bibata_Extra_Cursor
+from = windows work/ful1e5__Bibata_Extra_Cursor/Bibata-Modern-DodgerBlue-Windows
+variant =
+
+[bibata-turquoise]
+include = _ful1e5
+name = Bibata Turquoise
+category = Neon
+url = https://github.com/ful1e5/Bibata_Extra_Cursor
+from = windows work/ful1e5__Bibata_Extra_Cursor/Bibata-Modern-Turquoise-Windows
+variant =
+
+[bibata-pink]
+include = _ful1e5
+name = Bibata Pink
+category = Neon
+url = https://github.com/ful1e5/Bibata_Extra_Cursor
+from = windows work/ful1e5__Bibata_Extra_Cursor/Bibata-Modern-Pink-Windows
+variant =
+
+[googledot-blue]
+include = _ful1e5
+name = Google Dot Blue
+category = Neon
+url = https://github.com/ful1e5/Google_Cursor
+from = windows work/ful1e5__Google_Cursor/GoogleDot-Blue-Windows
+variant = -Large-
+merge = -Extra-Large-
+
+[fuchsia-pop]
+include = _ful1e5
+name = Fuchsia Pop
+category = Neon
+url = https://github.com/ful1e5/fuchsia-cursor
+from = windows work/ful1e5__fuchsia-cursor/Fuchsia-Pop-Windows
+# Fuchsia's location and person artwork is swapped upstream.
+Pin = file Person.cur
+Person = file Pin.cur
+
+[lyra]
+name = Lyra
+category = Neon
+author = yeyushengfan258, based on Capitaine
+license = GPL-3.0-only
+url = https://github.com/yeyushengfan258/Lyra-Cursors
+notes = Converted from the Xcursor theme to .cur/.ani
+from = xcursor raw/yeyushengfan258__Lyra-Cursors/dist/cursors
+
+# ---- Glass --------------------------------------------------------------------------------------------
+
+[bibata-ghost]
+include = _translucent
+name = Ghost
+category = Glass
+from = xcursor raw/bibata-translucent/Bibata_Ghost/cursors
+
+[bibata-spirit]
+include = _translucent
+name = Spirit
+category = Glass
+from = xcursor raw/bibata-translucent/Bibata_Spirit/cursors
+
+[bibata-tinted]
+include = _translucent
+name = Tinted Glass
+category = Glass
+from = xcursor raw/bibata-translucent/Bibata_Tinted/cursors
+
+# ---- Cute & cartoon -----------------------------------------------------------------------------------
+
+[banana]
+include = _ful1e5
+name = Banana
+category = Cute
+url = https://github.com/ful1e5/banana-cursor
+from = windows work/ful1e5__banana-cursor/Banana-Windows
+
+[banana-blue]
+include = _ful1e5
+name = Banana Blue
+category = Cute
+url = https://github.com/ful1e5/banana-cursor
+from = windows work/ful1e5__banana-cursor/Banana-Blue-Windows
+
+[kenney-toon]
+include = _kenney
+name = Toon
+category = Cute
+Arrow = png pointer_toon_a hot=tl
+Help = png cursor_help hot=tl
+AppStarting = png cursor_busy hot=tl
+Wait = png busy_circle_fade hot=center spin=24,45
+Crosshair = png target_round_a hot=center
+IBeam = png bracket_a_vertical hot=center
+NWPen = png drawing_brush hot=bl
+No = png disabled hot=center
+SizeNS = png resize_c_vertical hot=center
+SizeWE = png resize_c_horizontal hot=center
+SizeNWSE = png resize_c_diagonal_mirror hot=center
+SizeNESW = png resize_c_diagonal hot=center
+SizeAll = png resize_c_cross hot=center
+UpArrow = png arrow_n hot=top
+Hand = png hand_point hot=top
+
+[catppuccin-mocha]
+include = _catppuccin
+name = Catppuccin Mocha
+category = Cute
+from = xcursor work/catppuccin__cursors/catppuccin-mocha-dark-cursors/catppuccin-mocha-dark-cursors/cursors
+
+[catppuccin-latte-pink]
+include = _catppuccin
+name = Catppuccin Pink
+category = Cute
+from = xcursor work/catppuccin__cursors/catppuccin-latte-pink-cursors/catppuccin-latte-pink-cursors/cursors
+
+[catppuccin-mauve]
+include = _catppuccin
+name = Catppuccin Mauve
+category = Cute
+from = xcursor work/catppuccin__cursors/catppuccin-macchiato-mauve-cursors/catppuccin-macchiato-mauve-cursors/cursors
+
+[comix-white]
+include = _comix
+name = Comix White
+category = Cute
+from = xcursor work/comix-data/usr/share/icons/ComixCursors-White/cursors
+
+[comix-black]
+include = _comix
+name = Comix Black
+category = Cute
+from = xcursor work/comix-data/usr/share/icons/ComixCursors-Black/cursors
+
+[comix-blue]
+include = _comix
+name = Comix Slim Blue
+category = Cute
+from = xcursor work/comix-data/usr/share/icons/ComixCursors-Slim-Blue/cursors
+
+# ---- Animated -----------------------------------------------------------------------------------------
+
+[bibata-rainbow-modern]
+include = _ful1e5
+name = Rainbow Modern
+category = Animated
+url = https://github.com/ful1e5/Bibata_Cursor_Rainbow
+from = windows work/ful1e5__Bibata_Cursor_Rainbow/Bibata-Rainbow-Modern-Windows
+variant =
+
+[bibata-rainbow-original]
+include = _ful1e5
+name = Rainbow Original
+category = Animated
+url = https://github.com/ful1e5/Bibata_Cursor_Rainbow
+from = windows work/ful1e5__Bibata_Cursor_Rainbow/Bibata-Rainbow-Original-Windows
+variant =
+
+[bibata-bee]
+include = _ful1e5
+name = Bee
+category = Animated
+url = https://github.com/ful1e5/Bibata-Bee-Cursor
+from = windows work/ful1e5__Bibata-Bee-Cursor/Bibata-Bee-Modern-Windows
+variant =
+
+[bibata-zebra]
+include = _ful1e5
+name = Zebra
+category = Animated
+url = https://github.com/ful1e5/Bibata-Zebra-Cursor
+from = windows work/ful1e5__Bibata-Zebra-Cursor/Bibata-Zebra-Modern-Windows
+variant =

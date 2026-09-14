@@ -1,0 +1,60 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ComixCursors
+Upstream-Contact: Jens Luetkens <j.luetkens@limitland.de>
+Source: https://gitlab.com/limitland/comixcursors
+
+Files: *
+Copyright:
+    © 2010–2013 Ben Finney <ben+gnome@benfinney.id.au>
+    © 2005–2018 Jens Luetkens <j.luetkens@limitland.de>
+License: GPL-3+
+License-Grant:
+    This work is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    .
+    This work is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+    General Public License for more details.
+
+Files: Makefile
+Copyright:
+    © 2010–2013 Ben Finney <ben+gnome@benfinney.id.au>
+    © 2005–2013 Jens Luetkens <j.luetkens@limitland.de>
+    © 2003 Unai G
+License: GPL-3+
+License-Grant:
+    This work is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    .
+    This work is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+    General Public License for more details.
+
+Files: debian/*
+Copyright:
+    © 2009–2024 Ben Finney <bignose@debian.org>
+    © 2005–2008 Sune Vuorela <debian@pusling.com>
+License: GPL-3+
+License-Grant:
+    This is free software; you may copy, modify and/or distribute this work
+    under the terms of the GNU General Public License, version 3 or later.
+    No warranty expressed or implied.
+
+
+License: GPL-3+
+    On Debian systems, the complete text of version 3 of the GNU General
+    Public License can be found in ‘/usr/share/common-licenses/GPL-3’.
+
+
+# Local variables:
+# coding: utf-8
+# mode: debian-copyright
+# fill-column: 78
+# End:
+# vim: fileencoding=utf-8 textwidth=78 :
