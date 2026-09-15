@@ -318,6 +318,10 @@ internal sealed class PackLibrary
             pack.Order = entry.Order;
             pack.Downloads = entry.Downloads;
             pack.CatalogPreviews = entry.CatalogPreviews;
+            pack.CatalogCursors = entry.CatalogCursors;
+            pack.CatalogRoles = entry.CatalogRoles;
+            pack.CatalogAnimated = entry.CatalogAnimated;
+            pack.TopRated = entry.TopRated;
             if (entry.Author != null) pack.Author = entry.Author;
         }
     }

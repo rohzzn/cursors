@@ -40,6 +40,10 @@ internal static class Theme
     public static readonly Color ChipSelectedText = Rgb(0x1A1A1A);
     public static readonly Color SectionText = Rgb(0xA6A6A6);
     public static readonly Color SectionCount = Rgb(0x6A6A6A);
+    public static readonly Color Sidebar = Rgb(0x191919);
+    public static readonly Color NavHover = Color.FromArgb(10, 255, 255, 255);
+    public static readonly Color NavSelected = Color.FromArgb(20, 255, 255, 255);
+    public static readonly Color NavAccent = Rgb(0xE6E6E6);
 
     public static Color Rgb(int rgb) => Color.FromArgb(255, (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
 
@@ -104,6 +108,7 @@ internal sealed class UiFonts : IDisposable
     public Font Button { get; }
     public Font Chip { get; }
     public Font Section { get; }
+    public Font Small { get; }
     public Font Glyphs { get; }
 
     public UiFonts(float scale)
@@ -113,6 +118,7 @@ internal sealed class UiFonts : IDisposable
         Button = Create(13f * scale, FontStyle.Regular, "Segoe UI Variable Text", "Segoe UI");
         Chip = Create(12.5f * scale, FontStyle.Regular, "Segoe UI Variable Text", "Segoe UI");
         Section = Create(13f * scale, FontStyle.Regular, "Segoe UI Variable Text Semibold", "Segoe UI Semibold", "Segoe UI");
+        Small = Create(12f * scale, FontStyle.Regular, "Segoe UI Variable Text", "Segoe UI");
         Glyphs = Create(10f * scale, FontStyle.Regular, "Segoe Fluent Icons", "Segoe MDL2 Assets", "Marlett");
     }
 
@@ -137,6 +143,7 @@ internal sealed class UiFonts : IDisposable
         Button.Dispose();
         Chip.Dispose();
         Section.Dispose();
+        Small.Dispose();
         Glyphs.Dispose();
     }
 }

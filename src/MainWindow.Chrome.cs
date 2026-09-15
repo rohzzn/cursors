@@ -175,13 +175,11 @@ internal sealed partial class MainWindow
             if (pt.X >= ClientSize.Width - frame * 2) return Native.HTTOPRIGHT;
             return Native.HTTOP;
         }
-        if (pt.Y >= ViewportTopPx) return Native.HTCLIENT;
+        if (pt.Y >= ViewportTopPx || (pt.Y >= TitleBarPx && pt.X < SidebarPx)) return Native.HTCLIENT;
         if (pt.Y >= TitleBarPx)
         {
-            // Empty space in the filter row drags the window too.
-            foreach (var chip in _chips)
-                if (chip.Bounds.Contains(pt)) return Native.HTCLIENT;
-            return Native.HTCAPTION;
+            // Empty space in the header row drags the window too.
+            return SortButtonRect().Contains(pt) || FiltersButtonRect().Contains(pt) ? Native.HTCLIENT : Native.HTCAPTION;
         }
 
         foreach (int ht in new[] { Native.HTCLOSE, Native.HTMAXBUTTON, Native.HTMINBUTTON })

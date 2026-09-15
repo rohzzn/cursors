@@ -15,18 +15,13 @@ internal sealed class Card
     public string Category;
     public RectangleF Bounds; // content coordinates (unscrolled)
     public Smooth Hover, Press, Selected, Appear, Peek;
+    public bool Visible; // shown under the current view, filters and search
     public long HoverStart;
 
     public bool IsAdd => Pack == null;
 }
 
-internal sealed class Chip
-{
-    public string Category; // null = everything
-    public string Label;
-    public RectangleF Bounds; // client coordinates; the chip bar does not scroll
-    public Smooth Hover, Selected;
-}
+
 
 internal sealed class Section
 {
@@ -39,8 +34,7 @@ internal sealed partial class MainWindow : Form
 {
     // Layout metrics in 96-DPI pixels.
     private const float TitleBarHeight = 48, CaptionButtonWidth = 46, PadX = 24, PadBottom = 28, Gap = 12, MinCardSize = 152,
-        CardRadius = 10, PreviewBox = 72, PeekBox = 20, ButtonHeight = 32, ChipHeight = 28, ChipGap = 6, ChipRowGap = 8,
-        ChipBarPadBottom = 6, SectionHeaderHeight = 40, SectionGap = 14;
+        CardRadius = 10, PreviewBox = 72, PeekBox = 20, ButtonHeight = 32, SectionHeaderHeight = 40, SectionGap = 14;
 
     // The roles revealed under the pointer when a card is hovered.
     private static readonly int[] PeekRoles = { CursorPack.Hand, CursorPack.IBeam, CursorPack.Wait };
@@ -52,10 +46,7 @@ internal sealed partial class MainWindow : Form
     private PackLibrary _library;
     private readonly List<Card> _allCards = new();
     private readonly List<Card> _cards = new(); // visible under the current filter
-    private readonly List<Chip> _chips = new();
     private readonly List<Section> _sections = new();
-    private readonly Dictionary<string, int> _chipTextWidths = new();
-    private string _filter; // category, or null for all
     private string _selectedId;
     private readonly CursorApplier _applier = new();
 
@@ -65,7 +56,7 @@ internal sealed partial class MainWindow : Form
     private int _previewGeneration;
 
     private int _columns = 1;
-    private float _contentHeight, _chipBarHeight;
+    private float _contentHeight;
     private Smooth _scroll, _divider;
 
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 15 };
@@ -75,7 +66,7 @@ internal sealed partial class MainWindow : Form
 
     private float S => _dpi / 96f;
     private int TitleBarPx => (int)Math.Round(TitleBarHeight * S);
-    private int ViewportTopPx => TitleBarPx + (int)Math.Round(_chipBarHeight);
+    private int ViewportTopPx => TitleBarPx + (int)Math.Round(HeaderHeight * S);
     private float ViewportTop => ViewportTopPx;
     private float ViewportHeight => Math.Max(0, ClientSize.Height - ViewportTop);
     private float MaxScroll => Math.Max(0, _contentHeight - ViewportHeight);
@@ -103,7 +94,7 @@ internal sealed partial class MainWindow : Form
         _fonts = new UiFonts(S);
         InitSearch();
         _settings = IniFile.Read(AppPaths.SettingsFile);
-        _filter = _settings.TryGetValue("filter", out var filter) && filter.Length > 0 ? filter : null;
+        LoadBrowseSettings();
         _timer.Tick += (_, _) => OnTick();
         _applier.Completed += OnApplyCompleted;
 
@@ -124,7 +115,7 @@ internal sealed partial class MainWindow : Form
         }
         catch (EntryPointNotFoundException) { }
 
-        MinimumSize = new Size((int)(520 * S), (int)(420 * S));
+        MinimumSize = new Size((int)(720 * S), (int)(520 * S));
         Native.ApplyDarkFrame(Handle, Native.ToColorRef(Theme.FrameBorder));
         Native.SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0,
             Native.SWP_FRAMECHANGED | Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOZORDER | Native.SWP_NOACTIVATE);
@@ -199,7 +190,7 @@ internal sealed partial class MainWindow : Form
         _settings["bounds"] = $"{r.X},{r.Y},{r.Width},{r.Height}";
         _settings["maximized"] = WindowState == FormWindowState.Maximized ? "1" : "0";
         _settings["selected"] = _selectedId ?? "";
-        _settings["filter"] = _filter ?? "";
+        SaveBrowseSettings();
         IniFile.Write(AppPaths.SettingsFile, _settings);
     }
 
@@ -212,14 +203,19 @@ internal sealed partial class MainWindow : Form
         oldFonts.Dispose();
         _restoreTextWidth = -1;
         _titleTextWidth = -1;
-        _chipTextWidths.Clear();
-        if (IsHandleCreated) MinimumSize = new Size((int)(520 * S), (int)(420 * S));
+        _textWidths.Clear();
+        if (IsHandleCreated) MinimumSize = new Size((int)(720 * S), (int)(520 * S));
 
         // Keep showing the old previews until sharper ones for the new DPI are ready.
         foreach (var preview in _previewCache.Values)
             if (preview != null) _stalePreviews.Add(preview);
         _previewCache.Clear();
-        foreach (var card in _allCards) DropRolePreviews(card.Pack);
+        foreach (var card in _allCards)
+        {
+            DropRolePreviews(card.Pack);
+            if (card.Pack?.Kind == PackKind.Catalog) card.Pack.Preview = null; // fetched again as they come into view
+        }
+        _catalogShown.Clear();
         LayoutCards();
         if (IsHandleCreated) StartPreviewLoad(reloadAll: true);
         Invalidate();
@@ -236,9 +232,11 @@ internal sealed partial class MainWindow : Form
 
         var carried = new HashSet<string>();
         _allCards.Clear();
+        _cardByPack.Clear();
         foreach (var pack in _library.Packs)
         {
             var card = new Card { Pack = pack, Category = pack.Category };
+            _cardByPack[pack] = card;
             if (previous.TryGetValue(pack.Id, out var old) && newIds?.Contains(pack.Id) != true)
             {
                 pack.Preview = old.Preview;
@@ -256,24 +254,10 @@ internal sealed partial class MainWindow : Form
         add.Appear.Snap(1);
         _allCards.Add(add);
 
-        _chips.Clear();
-        _chips.Add(new Chip { Label = "All" });
-        // Only categories that hold packs get a chip; "Added" appears once the user adds something.
-        foreach (string category in _allCards.Where(c => !c.IsAdd).Select(c => c.Category).Distinct())
-            _chips.Add(new Chip { Category = category, Label = category });
-        if (_filter != null && _chips.All(c => c.Category != _filter)) _filter = null;
-        foreach (var chip in _chips) chip.Selected.Snap(chip.Category == _filter ? 1 : 0);
+        BuildNav();
 
         ApplyFilter(animate: false);
         if (IsHandleCreated) StartPreviewLoad();
-    }
-
-    private void SetFilter(string category)
-    {
-        if (_filter == category) return;
-        _filter = category;
-        foreach (var chip in _chips) chip.Selected.Target = chip.Category == category ? 1 : 0;
-        ApplyFilter(animate: true);
     }
 
     private void ApplyFilter(bool animate)
@@ -283,24 +267,30 @@ internal sealed partial class MainWindow : Form
             card.Hover.Snap(0);
             card.Press.Snap(0);
             card.Peek.Snap(0);
+            card.Visible = false;
         }
         _cards.Clear();
-        _cards.AddRange(_allCards.Where(c => (_filter == null || c.Category == _filter) && MatchesSearch(c)));
+        _cards.AddRange(CardsInView());
+        _viewCount = 0;
+        foreach (var card in _cards)
+        {
+            card.Visible = true;
+            if (!card.IsAdd) _viewCount++;
+        }
+        _hoverIndex = _pressIndex = -1;
+        _focusIndex = Math.Min(_focusIndex, _cards.Count - 1);
+        if (animate) _scroll.Snap(0);
+        LayoutCards();
         if (animate)
         {
-            foreach (var card in _cards)
+            VisibleRange(0, out int first, out int last);
+            for (int i = first; i <= last; i++)
             {
+                var card = _cards[i];
                 if (!card.IsAdd && card.Pack.Preview == null) continue;
                 card.Appear.Value = 0.3f;
                 card.Appear.Target = 1;
             }
-        }
-        _hoverIndex = _pressIndex = -1;
-        _focusIndex = Math.Min(_focusIndex, _cards.Count - 1);
-        LayoutCards();
-        if (animate)
-        {
-            _scroll.Snap(0);
             if (IsHandleCreated && ClientRectangle.Contains(PointToClient(MousePosition))) UpdateHover(PointToClient(MousePosition));
             StartAnimation();
         }
@@ -309,28 +299,34 @@ internal sealed partial class MainWindow : Form
 
     private void LayoutCards()
     {
-        LayoutChips();
+        LayoutNav();
         LayoutSearch();
-        float s = S, gap = Gap * s, avail = ClientSize.Width - 2 * PadX * s;
+        float s = S, gap = Gap * s, areaLeft = SidebarPx, areaWidth = ClientSize.Width - areaLeft, avail = areaWidth - 2 * PadX * s;
         _columns = Math.Max(1, (int)((avail + gap) / (MinCardSize * s + gap)));
         float size = Math.Max(60 * s, (float)Math.Floor((avail - gap * (_columns - 1)) / _columns));
         float used = size * _columns + gap * (_columns - 1);
-        float left = (float)Math.Round((ClientSize.Width - used) / 2);
+        float left = (float)Math.Round(areaLeft + (areaWidth - used) / 2);
+        _gridLeft = left;
+        _gridRight = left + used;
 
         _sections.Clear();
-        float y = _filter == null ? 0 : 10 * s;
+        bool grouped = _view == ViewAll || _view == ViewBuiltIn;
+        float y = grouped ? 0 : 4 * s;
         for (int start = 0; start < _cards.Count;)
         {
             int end = _cards.Count;
-            if (_filter == null)
+            if (grouped)
             {
                 end = start + 1;
                 while (end < _cards.Count && _cards[end].Category == _cards[start].Category) end++;
                 if (_sections.Count > 0) y += SectionGap * s;
+                int count = 0;
+                for (int k = start; k < end; k++)
+                    if (!_cards[k].IsAdd) count++;
                 _sections.Add(new Section
                 {
-                    Title = _cards[start].Category,
-                    Count = _cards.Skip(start).Take(end - start).Count(c => !c.IsAdd),
+                    Title = _cards[start].Category == PackLibrary.AddedCategory ? "My packs" : _cards[start].Category,
+                    Count = count,
                     Bounds = new RectangleF(left, y, used, SectionHeaderHeight * s),
                 });
                 y += SectionHeaderHeight * s;
@@ -343,32 +339,10 @@ internal sealed partial class MainWindow : Form
             y += rows * size + Math.Max(0, rows - 1) * gap;
             start = end;
         }
-        if (_filter != null) y += 4 * s;
+        if (!grouped) y += 4 * s;
         _contentHeight = y + PadBottom * s;
         _scroll.Target = Clamp(_scroll.Target, 0, MaxScroll);
         _scroll.Value = Clamp(_scroll.Value, 0, MaxScroll);
-    }
-
-    private void LayoutChips()
-    {
-        float s = S, h = ChipHeight * s, x0 = PadX * s, x = x0, y = TitleBarPx, maxX = ClientSize.Width - PadX * s;
-        int rows = 1;
-        foreach (var chip in _chips)
-        {
-            if (!_chipTextWidths.TryGetValue(chip.Label, out int textWidth))
-                _chipTextWidths[chip.Label] = textWidth = TextRenderer.MeasureText(chip.Label, _fonts.Chip, Size.Empty,
-                    TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
-            float w = textWidth + 24 * s;
-            if (x + w > maxX && x > x0 + 1)
-            {
-                x = x0;
-                y += h + ChipRowGap * s;
-                rows++;
-            }
-            chip.Bounds = new RectangleF((float)Math.Round(x), (float)Math.Round(y), (float)Math.Round(w), (float)Math.Round(h));
-            x += w + ChipGap * s;
-        }
-        _chipBarHeight = rows * h + (rows - 1) * ChipRowGap * s + ChipBarPadBottom * s;
     }
 
     private RectangleF ScreenRect(RectangleF content) =>
@@ -383,20 +357,19 @@ internal sealed partial class MainWindow : Form
         int generation = ++_previewGeneration;
         ResetCatalogQueue();
         int box = (int)Math.Round(PreviewBox * S);
-        var packs = _allCards.Where(c => c.Pack != null && (reloadAll || c.Pack.Preview == null)).Select(c => c.Pack).ToList();
+        // Community previews aren't decoded up front; they load as their cards come into view.
+        var packs = _allCards.Where(c => c.Pack != null && c.Pack.Kind != PackKind.Catalog && (reloadAll || c.Pack.Preview == null)).Select(c => c.Pack).ToList();
 
         ThreadPool.QueueUserWorkItem(_ =>
         {
             var decoded = new Dictionary<string, CursorPreview>(StringComparer.OrdinalIgnoreCase);
             foreach (var pack in packs)
             {
-                // Community cards show the site's image until they're downloaded; uncached images load as cards come into view.
-                bool image = pack.Kind == PackKind.Catalog;
-                string path = image ? CommunityCatalog.CachedImage(pack.CatalogPreviews?[0]) : pack.PreviewPath;
+                string path = pack.PreviewPath;
                 if (path == null) continue;
                 if (!decoded.TryGetValue(path, out var preview))
                 {
-                    preview = image ? CursorDecoder.CreateImagePreview(path, box) : CursorDecoder.CreatePreview(path, box);
+                    preview = CursorDecoder.CreatePreview(path, box);
                     decoded[path] = preview;
                 }
                 var result = preview;
@@ -433,9 +406,8 @@ internal sealed partial class MainWindow : Form
         else _previewCache[key] = preview;
         if (preview == null) return;
 
-        var card = _allCards.FirstOrDefault(c => c.Pack == pack);
-        if (card == null || pack.Preview == preview) return;
-        if (pack.Preview == null && _cards.Contains(card))
+        if (!_cardByPack.TryGetValue(pack, out var card) || pack.Preview == preview) return;
+        if (pack.Preview == null && IsNearView(card))
         {
             card.Appear.Value = 0;
             card.Appear.Target = 1;
@@ -452,8 +424,6 @@ internal sealed partial class MainWindow : Form
     private void OnPreviewBatchDone(int generation)
     {
         if (generation != _previewGeneration) return;
-        _previewBatchPending = false;
-        InvalidateGrid(); // cards on screen then ask for Community previews that weren't cached
         var inUse = new HashSet<CursorPreview>(_allCards.Where(c => c.Pack?.Preview != null).Select(c => c.Pack.Preview));
         foreach (var preview in _stalePreviews.ToList())
         {
@@ -536,7 +506,7 @@ internal sealed partial class MainWindow : Form
         {
             float target = card.Pack != null && card.Pack.Id == id ? 1 : 0;
             card.Selected.Target = target;
-            if (!_cards.Contains(card)) card.Selected.Snap(target);
+            if (!IsNearView(card)) card.Selected.Snap(target);
         }
         StartAnimation();
     }
@@ -601,7 +571,7 @@ internal sealed partial class MainWindow : Form
         }
         ReloadLibrary(result.AddedIds);
         string focusId = result.AddedIds.FirstOrDefault() ?? result.ExistingIds.First();
-        if (_cards.All(c => c.Pack?.Id != focusId)) SetFilter(null);
+        if (_cards.All(c => c.Pack?.Id != focusId)) SetView(ViewAll);
         int index = _cards.FindIndex(c => c.Pack?.Id == focusId);
         if (index >= 0) ScrollIntoView(index);
 
@@ -693,7 +663,7 @@ internal sealed partial class MainWindow : Form
         if (index < 0 || index >= _cards.Count) return;
         var b = _cards[index].Bounds;
         float s = S, target = _scroll.Target;
-        float top = b.Y - (_filter == null ? SectionHeaderHeight * s : 0);
+        float top = b.Y - (_sections.Count > 0 ? SectionHeaderHeight * s : 0);
         if (top < target) target = top;
         else if (b.Bottom + PadBottom * s > target + ViewportHeight) target = b.Bottom + PadBottom * s - ViewportHeight;
         _scroll.Target = Clamp(target, 0, MaxScroll);
@@ -726,7 +696,9 @@ internal sealed partial class MainWindow : Form
             if (ClientRectangle.Contains(PointToClient(MousePosition)) && !_draggingThumb) UpdateHover(PointToClient(MousePosition));
         }
 
-        for (int i = 0; i < _cards.Count; i++)
+        // Only cards on or near the screen animate; the rest are settled when they scroll into view.
+        VisibleRange(ViewportHeight, out int firstCard, out int lastCard);
+        for (int i = firstCard; i <= lastCard; i++)
         {
             var card = _cards[i];
             bool changed = card.Hover.Step(dt, 45) | card.Press.Step(dt, 28) | card.Selected.Step(dt, 55) |
@@ -748,14 +720,7 @@ internal sealed partial class MainWindow : Form
             }
         }
 
-        foreach (var chip in _chips)
-        {
-            if (!(chip.Hover.Step(dt, 45) | chip.Selected.Step(dt, 60))) continue;
-            busy = true;
-            var r = Rectangle.Round(chip.Bounds);
-            r.Inflate(2, 2);
-            Invalidate(r);
-        }
+        if (StepNav(dt)) busy = true;
 
         _divider.Target = _scroll.Value > 0.5f ? 1 : 0;
         if (_divider.Step(dt, 60))

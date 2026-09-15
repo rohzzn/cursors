@@ -19,6 +19,7 @@ internal sealed partial class MainWindow
 
     private TextBox _search;
     private string _query = "";
+    private string[] _queryWords = Array.Empty<string>();
     private int _titleTextWidth = -1;
     private Smooth _searchFocus, _searchClearHover;
 
@@ -122,6 +123,7 @@ internal sealed partial class MainWindow
         string query = _search.Text.Trim();
         if (query == _query) return;
         _query = query;
+        _queryWords = SearchText.Words(query);
         _scroll.Snap(0);
         ApplyFilter(animate: false);
     }
@@ -129,13 +131,11 @@ internal sealed partial class MainWindow
     /// <summary>Every word must appear in the name, style or author; case and accents are ignored.</summary>
     private bool MatchesSearch(Card card)
     {
-        if (_query.Length == 0) return true;
+        if (_queryWords.Length == 0) return true;
         if (card.IsAdd) return false;
-        var pack = card.Pack;
-        string text = pack.Label + " " + pack.Category + " " + pack.Author + " " + pack.SchemeName;
-        var compare = CultureInfo.CurrentCulture.CompareInfo;
-        foreach (string word in _query.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
-            if (compare.IndexOf(text, word, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) < 0) return false;
+        string text = card.Pack.SearchKey;
+        foreach (string word in _queryWords)
+            if (text.IndexOf(word, StringComparison.Ordinal) < 0) return false;
         return true;
     }
 
@@ -204,12 +204,18 @@ internal sealed partial class MainWindow
         float s = S;
         const TextFormatFlags centered = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
                                          TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix;
-        var title = new Rectangle((int)Math.Round(PadX * s), ViewportTopPx + (int)Math.Round(70 * s),
-            ClientSize.Width - (int)Math.Round(2 * PadX * s), (int)Math.Round(28 * s));
-        string heading = _query.Length > 0 ? $"No packs match “{_query}”" : "Nothing here yet";
+        int left = SidebarPx + (int)Math.Round(PadX * s);
+        var title = new Rectangle(left, ViewportTopPx + (int)Math.Round(70 * s),
+            ClientSize.Width - left - (int)Math.Round(PadX * s), (int)Math.Round(28 * s));
+        bool filtered = ActiveFilterCount > 0 && ViewHasCommunity;
+        string heading = _query.Length > 0 ? $"No packs match “{_query}”" : filtered ? "No sets match these filters" : "Nothing here yet";
         TextRenderer.DrawText(g, heading, _fonts.Title, title, Theme.Text, centered);
         var hint = new Rectangle(title.X, title.Bottom + (int)Math.Round(6 * s), title.Width, (int)Math.Round(22 * s));
-        string tip = _filter != null && _query.Length > 0 ? "Try All, or search by pack name, style or author" : "Try a pack name, style or author";
+        string tip = _query.Length > 0 && filtered ? "Try turning filters off, or another name, style or author"
+            : _query.Length > 0 && _view != ViewAll ? "Try All packs, or another name, style or author"
+            : _query.Length > 0 ? "Try a pack name, style or author"
+            : filtered ? "Turn some filters off to see more sets"
+            : "Packs you add appear here";
         TextRenderer.DrawText(g, tip, _fonts.Label, hint, Theme.TextSecondary, centered);
     }
 }

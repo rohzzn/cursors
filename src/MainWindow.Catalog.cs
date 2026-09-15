@@ -27,14 +27,14 @@ internal sealed partial class MainWindow
     private readonly HashSet<string> _catalogQueued = new(), _catalogFailed = new(), _catalogDownloading = new();
     private volatile HashSet<string> _catalogNearView = new(); // replaced, never modified, so workers can read it
     private int _catalogWorkers; // guarded by _catalogQueue
-    private bool _previewBatchPending;
+    private readonly HashSet<CursorPack> _catalogShown = new(); // community packs holding a decoded preview
+    private const int MaxCatalogPreviews = 400;
 
     private void ResetCatalogQueue()
     {
         lock (_catalogQueue) _catalogQueue.Clear();
         _catalogQueued.Clear();
         _catalogFailed.Clear();
-        _previewBatchPending = true;
     }
 
     /// <summary>Queues preview downloads for Community cards on or near the screen that don't have one yet.</summary>
@@ -44,7 +44,8 @@ internal sealed partial class MainWindow
         int box = (int)Math.Round(PreviewBox * S);
         var near = new HashSet<string>();
         // Bottom to top, so the queue (served newest first) starts with the top of the screen.
-        for (int i = _cards.Count - 1; i >= 0; i--)
+        VisibleRange(margin, out int firstNear, out int lastNear);
+        for (int i = lastNear; i >= firstNear; i--)
         {
             var pack = _cards[i].Pack;
             if (pack == null || pack.Kind != PackKind.Catalog || pack.Preview != null) continue;
@@ -52,7 +53,7 @@ internal sealed partial class MainWindow
             string id = pack.CatalogPreviews?[0];
             if (r.Bottom < top || r.Top > bottom || id == null) continue;
             near.Add(id);
-            if (_previewBatchPending || _catalogFailed.Contains(id) || !_catalogQueued.Add(id)) continue;
+            if (_catalogFailed.Contains(id) || !_catalogQueued.Add(id)) continue;
             lock (_catalogQueue) _catalogQueue.Add(new CatalogJob { Pack = pack, ImageId = id, Generation = _previewGeneration, Box = box });
             PumpCatalogWorkers();
         }
@@ -122,10 +123,40 @@ internal sealed partial class MainWindow
         if (preview == null)
         {
             _catalogFailed.Add(job.ImageId);
-            if (_allCards.FirstOrDefault(c => c.Pack == job.Pack) is Card card) InvalidateCard(card);
+            if (_cardByPack.TryGetValue(job.Pack, out var card)) InvalidateCard(card);
             return;
         }
         OnPreviewReady(job.Generation, job.Box, path, job.Pack, preview);
+        if (job.Pack.Preview != null) _catalogShown.Add(job.Pack);
+        TrimCatalogPreviews();
+    }
+
+    /// <summary>
+    /// Scrolling through thousands of community sets would keep every preview in memory; past a limit, previews of
+    /// cards far from the screen are released. They come back from the disk cache when those cards return.
+    /// </summary>
+    private void TrimCatalogPreviews()
+    {
+        if (_catalogShown.Count <= MaxCatalogPreviews) return;
+        VisibleRange(ViewportHeight, out int first, out int last);
+        var keep = new HashSet<CursorPack>();
+        for (int i = first; i <= last; i++)
+            if (_cards[i].Pack != null) keep.Add(_cards[i].Pack);
+
+        foreach (var pack in _catalogShown.ToList())
+        {
+            if (_catalogShown.Count <= MaxCatalogPreviews * 3 / 4) break;
+            if (keep.Contains(pack)) continue;
+            _catalogShown.Remove(pack);
+            var preview = pack.Preview;
+            if (preview == null) continue;
+            pack.Preview = null;
+            foreach (string key in _previewCache.Where(kv => kv.Value == preview).Select(kv => kv.Key).ToList()) _previewCache.Remove(key);
+            _stalePreviews.Remove(preview);
+            preview.Dispose();
+            DropRolePreviews(pack);
+            if (_cardByPack.TryGetValue(pack, out var card)) card.Appear.Snap(0);
+        }
     }
 
     private bool PostToWindow(Action action)
@@ -165,7 +196,7 @@ internal sealed partial class MainWindow
     private void OnCatalogDownloaded(CursorPack entry, LinkImportResult result)
     {
         _catalogDownloading.Remove(entry.Id);
-        if (_allCards.FirstOrDefault(c => c.Pack == entry) is Card card) InvalidateCard(card);
+        if (_cardByPack.TryGetValue(entry, out var card)) InvalidateCard(card);
         if (result.Error != null)
         {
             ShowToast(result.Error == "That link wasn't found" ? $"“{entry.Label}” is no longer available" : result.Error);

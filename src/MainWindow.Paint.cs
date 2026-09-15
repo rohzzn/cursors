@@ -36,14 +36,15 @@ internal sealed partial class MainWindow
         var clip = e.ClipRectangle;
         using (var bg = new SolidBrush(Theme.Background)) g.FillRectangle(bg, clip);
 
-        int top = ViewportTopPx;
-        if (clip.Bottom > top)
+        int top = ViewportTopPx, side = SidebarPx;
+        if (clip.Bottom > top && clip.Right > side)
         {
             var state = g.Save();
-            g.SetClip(new Rectangle(0, top, ClientSize.Width, ClientSize.Height - top), CombineMode.Intersect);
+            g.SetClip(new Rectangle(side, top, ClientSize.Width - side, ClientSize.Height - top), CombineMode.Intersect);
             long now = _clock.ElapsedMilliseconds / AnimationFrameMs * AnimationFrameMs;
             foreach (var section in _sections) DrawSection(g, section, clip);
-            for (int i = 0; i < _cards.Count; i++)
+            VisibleRange(8 * S, out int first, out int last);
+            for (int i = first; i <= last; i++)
             {
                 var r = ScreenRect(_cards[i]);
                 if (r.Bottom < top - 8 || r.Top > ClientSize.Height) continue;
@@ -60,8 +61,9 @@ internal sealed partial class MainWindow
         if (clip.Top < top)
         {
             DrawTitleBar(g);
-            DrawChipBar(g);
+            if (clip.Right > side) DrawHeader(g);
         }
+        if (clip.Left < side && clip.Bottom > TitleBarPx) DrawSidebar(g);
         if (_dropHover.Value > 0) DrawDropOverlay(g);
         if (_toastText != null && _toastAnim.Value > 0) DrawToast(g);
     }
@@ -237,39 +239,7 @@ internal sealed partial class MainWindow
         TextRenderer.DrawText(g, section.Count.ToString(CultureInfo.CurrentCulture), _fonts.Chip, countRect, Theme.SectionCount, flags);
     }
 
-    private void DrawChipBar(Graphics g)
-    {
-        float s = S;
-        int top = TitleBarPx, bottom = ViewportTopPx;
-        using (var bg = new SolidBrush(Theme.Background)) g.FillRectangle(bg, 0, top, ClientSize.Width, bottom - top);
 
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.PixelOffsetMode = PixelOffsetMode.None;
-        foreach (var chip in _chips)
-        {
-            float selected = chip.Selected.Value, hover = chip.Hover.Value;
-            var r = chip.Bounds;
-            var fill = Theme.Lerp(Theme.Lerp(Color.FromArgb(0, 255, 255, 255), Theme.ChipFillHover, hover), Theme.ChipSelected, selected);
-            if (fill.A > 0)
-                using (var path = Theme.RoundedRect(r, r.Height / 2))
-                using (var brush = new SolidBrush(fill))
-                    g.FillPath(brush, path);
-            if (selected < 0.99f)
-                using (var path = Theme.RoundedRect(RectangleF.Inflate(r, -0.5f, -0.5f), r.Height / 2 - 0.5f))
-                using (var pen = new Pen(Theme.Fade(Theme.ChipBorder, 1 - selected), 1f))
-                    g.DrawPath(pen, path);
-            var text = Theme.Lerp(Theme.Lerp(Theme.ChipText, Theme.Text, hover), Theme.ChipSelectedText, selected);
-            TextRenderer.DrawText(g, chip.Label, _fonts.Chip, Rectangle.Round(r), text,
-                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix);
-        }
-
-        if (_divider.Value > 0)
-        {
-            int line = Math.Max(1, (int)Math.Round(s));
-            using var brush = new SolidBrush(Theme.Fade(Theme.Divider, _divider.Value));
-            g.FillRectangle(brush, 0, bottom - line, ClientSize.Width, line);
-        }
-    }
 
     private void DrawTitleBar(Graphics g)
     {
@@ -349,7 +319,7 @@ internal sealed partial class MainWindow
     private void DrawDropOverlay(Graphics g)
     {
         float s = S, t = _dropHover.Value;
-        var area = new RectangleF(12 * s, ViewportTop + 4 * s, ClientSize.Width - 24 * s, ClientSize.Height - ViewportTop - 16 * s);
+        var area = new RectangleF(SidebarPx + 12 * s, ViewportTop + 4 * s, ClientSize.Width - SidebarPx - 24 * s, ClientSize.Height - ViewportTop - 16 * s);
         g.SmoothingMode = SmoothingMode.AntiAlias;
         using (var path = Theme.RoundedRect(area, 14 * s))
         {
@@ -364,7 +334,7 @@ internal sealed partial class MainWindow
         float s = S;
         int textW = _toastText == null ? 0 : TextRenderer.MeasureText(_toastText, _fonts.Label, Size.Empty, TextFormatFlags.NoPadding).Width;
         int w = textW + (int)(40 * s), h = (int)(36 * s);
-        return new Rectangle((ClientSize.Width - w) / 2, ClientSize.Height - (int)(24 * s) - h, w, h);
+        return new Rectangle(SidebarPx + (ClientSize.Width - SidebarPx - w) / 2, ClientSize.Height - (int)(24 * s) - h, w, h);
     }
 
     private void DrawToast(Graphics g)

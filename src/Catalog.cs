@@ -71,6 +71,10 @@ internal static class CommunityCatalog
                 License = Get("license"),
                 Url = SetPageUrl(slug),
                 Downloads = int.TryParse(Get("downloads"), out int downloads) ? downloads : 0,
+                CatalogCursors = int.TryParse(Get("cursors"), out int cursors) ? cursors : 0,
+                CatalogRoles = int.TryParse(Get("roles"), out int roles) ? roles : 0,
+                CatalogAnimated = int.TryParse(Get("animated"), out int animated) ? animated : 0,
+                TopRated = Get("toprated") == "1",
                 CatalogPreviews = new[] { arrow, ImageIdOrNull(Get("link")), ImageIdOrNull(Get("text")), ImageIdOrNull(Get("busy")) },
             });
         }
@@ -80,7 +84,19 @@ internal static class CommunityCatalog
     public static string FormatDownloads(int downloads) =>
         downloads.ToString("N0", CultureInfo.CurrentCulture) + (downloads == 1 ? " download" : " downloads");
 
-    private static bool IsImageId(string id) => id != null && id.Length <= 12 && Regex.IsMatch(id, "^[0-9]+$");
+    /// <summary>Public domain and attribution-only licenses, which let anyone share and reuse a set.</summary>
+    public static bool IsOpenLicense(string license) =>
+        license != null && (license.IndexOf("Public Domain", StringComparison.OrdinalIgnoreCase) >= 0
+                            || license.Equals("Attribution Required (CC by)", StringComparison.OrdinalIgnoreCase)
+                            || license.IndexOf("Free Art", StringComparison.OrdinalIgnoreCase) >= 0);
+
+    private static bool IsImageId(string id)
+    {
+        if (string.IsNullOrEmpty(id) || id.Length > 12) return false;
+        foreach (char c in id)
+            if (c < '0' || c > '9') return false;
+        return true;
+    }
 
     private static string ImageIdOrNull(string id) => IsImageId(id) ? id : null;
 

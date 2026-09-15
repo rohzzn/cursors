@@ -1,5 +1,7 @@
 using System;
+using System.Globalization;
 using System.IO;
+using System.Text;
 
 namespace Cursors;
 
@@ -49,6 +51,15 @@ internal sealed class CursorPack
     /// <summary>Community catalog: downloads on the hosting site, and preview image ids for the arrow, link, text and busy cursors.</summary>
     public int Downloads { get; set; }
     public string[] CatalogPreviews { get; set; }
+    public int CatalogCursors { get; set; }
+    public int CatalogRoles { get; set; }
+    public int CatalogAnimated { get; set; }
+    public bool TopRated { get; set; }
+
+    private string _searchKey;
+
+    /// <summary>Name, style and author in the form search compares against.</summary>
+    public string SearchKey => _searchKey ??= SearchText.Normalize(Label + " " + Category + " " + Author + " " + SchemeName);
 
     /// <summary>Folder that holds the pack's files, when it has one of its own.</summary>
     public string Folder { get; set; }
@@ -111,4 +122,20 @@ internal sealed class CursorPack
     }
 
     public override string ToString() => Label;
+}
+
+internal static class SearchText
+{
+    /// <summary>Lower case without accents, so "Pokémon" and "pokemon" match.</summary>
+    public static string Normalize(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        string decomposed = text.ToLowerInvariant().Normalize(NormalizationForm.FormD);
+        var sb = new StringBuilder(decomposed.Length);
+        foreach (char c in decomposed)
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark) sb.Append(c);
+        return sb.ToString();
+    }
+
+    public static string[] Words(string query) => Normalize(query).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 }

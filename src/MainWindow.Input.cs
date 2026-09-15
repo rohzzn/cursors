@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace Cursors;
@@ -12,7 +13,9 @@ internal sealed partial class MainWindow
     {
         None,
         Card,
-        Chip,
+        Nav,
+        Sort,
+        Filters,
         Restore,
         Search,
         SearchClear,
@@ -35,11 +38,17 @@ internal sealed partial class MainWindow
             else if (SearchRect().Contains(p)) zone = Zone.Search;
             return -1;
         }
+        if (p.X < SidebarPx)
+        {
+            int nav = _nav.FindIndex(n => !n.Header && n.Bounds.Contains(p));
+            if (nav >= 0) zone = Zone.Nav;
+            return nav;
+        }
         if (p.Y < ViewportTopPx)
         {
-            int chip = _chips.FindIndex(c => c.Bounds.Contains(p));
-            if (chip >= 0) zone = Zone.Chip;
-            return chip;
+            if (SortButtonRect().Contains(p)) zone = Zone.Sort;
+            else if (FiltersButtonRect().Contains(p)) zone = Zone.Filters;
+            return -1;
         }
         if (HasScroll && ScrollTrackRect().Contains(p))
         {
@@ -47,7 +56,8 @@ internal sealed partial class MainWindow
             zone = p.Y >= thumb.Top && p.Y <= thumb.Bottom ? Zone.ScrollThumb : Zone.ScrollTrack;
             return -1;
         }
-        for (int i = 0; i < _cards.Count; i++)
+        VisibleRange(0, out int first, out int last);
+        for (int i = first; i <= last; i++)
         {
             if (ScreenRect(_cards[i]).Contains(p))
             {
@@ -78,7 +88,9 @@ internal sealed partial class MainWindow
                 EnsureRolePreviews(card);
             }
         }
-        for (int i = 0; i < _chips.Count; i++) _chips[i].Hover.Target = zone == Zone.Chip && i == index ? 1 : 0;
+        for (int i = 0; i < _nav.Count; i++) _nav[i].Hover.Target = zone == Zone.Nav && i == index ? 1 : 0;
+        _sortHover.Target = zone == Zone.Sort ? 1 : 0;
+        _filtersHover.Target = zone == Zone.Filters ? 1 : 0;
         _restoreHover.Target = zone == Zone.Restore ? 1 : 0;
         _searchClearHover.Target = zone == Zone.SearchClear ? 1 : 0;
         _scrollbarHover.Target = zone is Zone.ScrollThumb or Zone.ScrollTrack || _draggingThumb ? 1 : 0;
@@ -170,8 +182,14 @@ internal sealed partial class MainWindow
                 _cards[pressIndex].Press.Target = 0;
                 if (zone == Zone.Card && index == pressIndex) Activate(_cards[pressIndex]);
                 break;
-            case Zone.Chip when zone == Zone.Chip && index == pressIndex:
-                SetFilter(_chips[index].Category);
+            case Zone.Nav when zone == Zone.Nav && index == pressIndex:
+                SetView(_nav[index].View);
+                break;
+            case Zone.Sort when zone == Zone.Sort:
+                ShowSortMenu();
+                break;
+            case Zone.Filters when zone == Zone.Filters:
+                ShowFiltersMenu();
                 break;
             case Zone.Restore:
                 _restorePress.Target = 0;
@@ -230,9 +248,10 @@ internal sealed partial class MainWindow
             case Keys.Control | Keys.Tab:
             case Keys.Control | Keys.Shift | Keys.Tab:
             {
-                int current = Math.Max(0, _chips.FindIndex(c => c.Category == _filter));
+                var views = _nav.Where(n => !n.Header).ToList();
+                int current = Math.Max(0, views.FindIndex(n => n.View == _view));
                 int step = (keyData & Keys.Shift) == Keys.Shift ? -1 : 1;
-                if (_chips.Count > 0) SetFilter(_chips[(current + step + _chips.Count) % _chips.Count].Category);
+                if (views.Count > 0) SetView(views[(current + step + views.Count) % views.Count].View);
                 return true;
             }
             case Keys.Apps:

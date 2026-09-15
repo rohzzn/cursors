@@ -6,12 +6,12 @@
 
 **One-click cursor packs for Windows**
 
-A small, native app with 60 built-in cursor styles and 500 popular community sets. Click a card and your whole pointer scheme changes instantly.
+A small, native app with 60 built-in cursor styles and 500 popular community cursor sets. Click a card and your whole pointer scheme changes instantly.
 
 [![Latest release](https://img.shields.io/github/v/release/rohzzn/cursors?label=download&color=2b2b2b)](https://github.com/rohzzn/cursors/releases/latest)
 ![Windows 10 and 11](https://img.shields.io/badge/Windows-10%20%7C%2011-2b2b2b)
 ![.NET Framework 4.8](https://img.shields.io/badge/.NET%20Framework-4.8-2b2b2b)
-![App size](https://img.shields.io/badge/app-171%20KB-2b2b2b)
+![App size](https://img.shields.io/badge/app-184%20KB-2b2b2b)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2b2b2b)](LICENSE)
 
 <br>
@@ -27,10 +27,11 @@ A small, native app with 60 built-in cursor styles and 500 popular community set
 - **500 community sets.** The most-downloaded complete sets from [rw-designer.com](https://www.rw-designer.com/cursor-library) are in the **Community** section, including 23 Minecraft sets and RuneScape, Mario, Zelda, Sonic and Undertale ones. Previews load as you scroll, and one click downloads and applies a set.
 - **Previews.** Large previews of every pack, with animated cursors playing and each pack's link, text and busy cursors fading in when you hover.
 - **Search.** Start typing to find a pack by name, style or author.
+- **Browse, sort and filter.** A sidebar takes you to all packs, the built-in ones, Community, your own packs or a single style. Community sets sort by downloads, rating or name, and filter to full sets, animated sets, top-rated sets or open licenses.
 - **Your own packs.** Drop a `.zip`, an `install.inf` or loose `.cur`/`.ani` files onto the window. Roles are detected automatically, including from `install.inf` files that list them out of order.
 - **Import from a link.** Paste or drag in a link to a cursor set page, such as one on [rw-designer.com](https://www.rw-designer.com/cursor-library), and Cursors downloads that set into your library with its name, license and source.
 - **Stays applied.** Your choice survives restarts using the same settings as Mouse Properties. No startup entry, no background process.
-- **Light and native.** A single 171 KB exe that opens in well under a second and uses no CPU while idle. It has a dark title bar with Windows 11 snap layouts and handles per-monitor DPI.
+- **Light and native.** A single 184 KB exe that opens in well under a second and uses no CPU while idle. It has a dark title bar with Windows 11 snap layouts and handles per-monitor DPI.
 - **Private.** No account and no telemetry. Cursors only goes online to show Community previews and to download a set or link you pick.
 
 ## Download
@@ -52,11 +53,11 @@ A small, native app with 60 built-in cursor styles and 500 popular community set
   </tr>
   <tr>
     <td align="center"><sub>Hover a card to see more of the pack</sub></td>
-    <td align="center"><sub>Filter the library by style</sub></td>
+    <td align="center"><sub>Browse the built-in styles from the sidebar</sub></td>
   </tr>
 </table>
 
-<p align="center"><img src="docs/screenshot-community.png" alt="The Community section, showing popular cursor sets from rw-designer.com with a set's link, text and busy cursors on hover" width="880"><br><sub>500 community sets, with previews that load as you scroll</sub></p>
+<p align="center"><img src="docs/screenshot-community.png" alt="The Community section, showing popular cursor sets from rw-designer.com with a set's link, text and busy cursors on hover" width="880"><br><sub>500 community sets, with sort, filters and previews that load as you scroll</sub></p>
 
 ## The library
 
@@ -90,7 +91,8 @@ Packs with unclear licensing, such as Figma, Minecraft and other game or brand c
 | Apply a pack | Click its card, or use the arrow keys and <kbd>Enter</kbd> |
 | See more of a pack | Hover its card |
 | Find a pack | Start typing, or press <kbd>Ctrl</kbd>+<kbd>F</kbd>. <kbd>Esc</kbd> clears the search, and <kbd>Enter</kbd> or <kbd>↓</kbd> jumps to the results |
-| Filter by style | Click a category chip, or press <kbd>Ctrl</kbd>+<kbd>Tab</kbd> |
+| Browse a view or style | Pick it in the sidebar, or press <kbd>Ctrl</kbd>+<kbd>Tab</kbd> to step through them |
+| Sort or filter community sets | Use **Sort** and **Filters** at the top of All packs or Community |
 | Get a community set | Open **Community** and click a card. The set downloads, applies and stays in your library |
 | Go back to the Windows cursors | Click **Restore default** in the title bar |
 | Add your own packs | Use **Add pack → From files…** or <kbd>Ctrl</kbd>+<kbd>O</kbd>, or drag folders and zips onto the window |
@@ -102,10 +104,11 @@ Packs with unclear licensing, such as Figma, Minecraft and other game or brand c
 
 ## Community sets
 
-The **Community** section lists the 500 most-downloaded cursor sets on [rw-designer.com](https://www.rw-designer.com/cursor-library) that work as a scheme. Each one is offered as a single download, has a normal pointer and covers at least three cursor roles. Sets the site marks as adult content are left out.
+The **Community** section lists the 500 most-downloaded cursor sets on [rw-designer.com](https://www.rw-designer.com/cursor-library) that work as a scheme: each downloads as one file, has a normal pointer and covers at least three cursor roles. Sets the site marks as adult content, and sets with explicit or hateful words in their names, are left out.
 
 - **Nothing is bundled.** The app ships only the list, [`packs/catalog.tsv`](packs/catalog.tsv): names, authors, download counts, licenses and links.
 - **Previews load as you scroll.** Each card's preview image comes from rw-designer.com when the card scrolls into view, a couple at a time, and is cached in `%LOCALAPPDATA%\Cursors\Catalog`.
+- **Sort and filter.** Sort by **Most downloaded**, **Top rated** or **Name**. **Filters** narrows the list to full sets (all 15 cursors), animated sets, sets the site rates highly, or public-domain and CC BY licenses. The header shows how many sets match.
 - **One click to apply.** Clicking a card downloads that set, maps each file to the role the site tags it with, adds it to your library and applies it. Afterwards the card works offline like any other pack.
 - **Licenses come from the authors.** Right-click a card to see its author, license and download count, or to open its page.
 
@@ -200,7 +203,7 @@ powershell -ExecutionPolicy Bypass -File tools\build-packs.ps1 -Sources D:\curso
 powershell -ExecutionPolicy Bypass -File tools\update-catalog.ps1
 ```
 
-This rewrites `packs\catalog.tsv`. The script reads only rw-designer's public listing and set pages, which its `robots.txt` allows, at one request per second. It downloads no cursor files. Pages are cached for three days, so a stopped run resumes. `-Count` sets how many sets to list, and `-MinRoles` sets how many cursor roles a set needs.
+This rewrites `packs\catalog.tsv`. The script reads only rw-designer's public listing and set pages, which its `robots.txt` allows, at one request per second. It downloads no cursor files. Pages are cached for three days, so a stopped run resumes. A full refresh reads about 11,900 pages, a little over three hours. `-Count` limits the list to the most-downloaded sets, and `-MinRoles` to sets covering that many cursor roles.
 </details>
 
 <details>

@@ -2,6 +2,20 @@
 
 All notable changes to Cursors are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **More from the catalog script.** `tools/update-catalog.ps1` now lists every set that downloads as one file unless told otherwise (`-Count 500 -MinRoles 3` gives the shipped list), and records each set's cursor count, roles, animation and the site's top-rated mark.
+- **Sidebar.** Browse All packs, Built-in, Community or My packs, or go straight to a built-in style, with a count beside each.
+- **Sort and filters.** Sort community sets by downloads, rating or name. Filter them to full sets, animated sets, top-rated sets or open licenses. The header shows how many sets match.
+
+### Changed
+
+- **No more category chips.** The row of tags above the grid is replaced by the sidebar and the Sort and Filters menus.
+- **Built for thousands of cards.** Only cards on screen animate and load previews, and decoded previews are capped while you scroll. Search compares prepared text, so the whole library opens, filters and searches without a pause.
+- **A cleaner community list.** Besides sets the site marks as adult content, sets with explicit or hateful words in their names are left out.
+
 ## [1.1.0] - 2026-09-15
 
 ### Added
