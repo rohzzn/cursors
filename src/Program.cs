@@ -25,6 +25,22 @@ internal static class Program
             }
         }
 
+        if (args.Length > 0 && (args[0].Equals("--uninstall", StringComparison.OrdinalIgnoreCase) || args[0].Equals("/uninstall", StringComparison.OrdinalIgnoreCase)))
+        {
+            // Cursors.exe --uninstall puts the Windows Default pointers back and deletes the app's shortcuts.
+            Shortcuts.Remove();
+            try
+            {
+                var library = PackLibrary.Load();
+                CursorScheme.Apply(library.WindowsDefault, library.WindowsDefault);
+                return 0;
+            }
+            catch (Exception)
+            {
+                return 1;
+            }
+        }
+
         using var mutex = new Mutex(true, @"Local\Cursors.App.SingleInstance", out bool createdNew);
         if (!createdNew)
         {
@@ -32,6 +48,7 @@ internal static class Program
             return 0;
         }
 
+        Shortcuts.Ensure();
         Native.EnableDarkMenus();
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);

@@ -186,7 +186,7 @@ internal sealed partial class MainWindow
 
         foreach (int ht in new[] { Native.HTCLOSE, Native.HTMAXBUTTON, Native.HTMINBUTTON })
             if (CaptionButtonRect(ht).Contains(pt)) return ht;
-        if (RestoreButtonRect().Contains(pt)) return Native.HTCLIENT;
+        if (RestoreButtonRect().Contains(pt) || SearchRect().Contains(pt)) return Native.HTCLIENT;
         return Native.HTCAPTION;
     }
 
@@ -233,6 +233,7 @@ internal sealed partial class MainWindow
             r.Inflate(2, 2);
             Invalidate(r);
         }
+        if (StepSearch(dt)) busy = true;
         if (_scrollbarHover.Step(dt, 60))
         {
             busy = true;

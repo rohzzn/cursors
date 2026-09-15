@@ -52,6 +52,20 @@ internal static class PackDetection
     public static int GuessRole(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return -1;
+        // Cursor sites name files "<picture> - <role>" (e.g. "RedStone Torch - Move - Alternate Select"), so the part
+        // after the last " - " says what the cursor is for.
+        int dash = name.LastIndexOf(" - ", StringComparison.Ordinal);
+        if (dash > 0)
+        {
+            int role = GuessRoleFromName(name.Substring(dash + 3));
+            if (role >= 0) return role;
+        }
+        return GuessRoleFromName(name);
+    }
+
+    private static int GuessRoleFromName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return -1;
         string spaced = Regex.Replace(name, "([a-z])([A-Z])", "$1 $2").ToLowerInvariant();
         var tokens = new HashSet<string>(Regex.Split(spaced, "[^a-z0-9]+").Where(t => t.Length > 0));
         tokens.UnionWith(Regex.Split(spaced, "[^a-z]+").Where(t => t.Length > 0));

@@ -87,6 +87,91 @@ internal static class CursorDecoder
         }
     }
 
+    /// <summary>Preview of a plain image, such as a cursor site's PNG rendering, scaled like a cursor file's preview.</summary>
+    public static CursorPreview CreateImagePreview(string path, int boxPx)
+    {
+        try
+        {
+            using var stream = new MemoryStream(File.ReadAllBytes(path));
+            using var source = new Bitmap(stream);
+            using var argb = source.Clone(new Rectangle(0, 0, source.Width, source.Height), PixelFormat.Format32bppArgb);
+            var img = new RawImage { Width = argb.Width, Height = argb.Height, Pixels = new int[argb.Width * argb.Height] };
+            var bd = argb.LockBits(new Rectangle(0, 0, argb.Width, argb.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            try
+            {
+                for (int y = 0; y < img.Height; y++)
+                    Marshal.Copy(bd.Scan0 + y * bd.Stride, img.Pixels, y * img.Width, img.Width);
+            }
+            finally
+            {
+                argb.UnlockBits(bd);
+            }
+            RemoveHotspotMark(img);
+            return Render(new List<RawImage> { img }, new[] { 0 }, new[] { 1000 }, boxPx);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // rw-designer's cursor previews mark the hotspot with a dotted gray cross: #7F7F7F dots 2, 4, 6 and 8 px from it
+    // along each axis, fading out, drawn where the cursor is transparent. It isn't part of the cursor, so it goes.
+    private static readonly int[] HotspotMarkAlpha = { 0xFF, 0xFF, 0x9F, 0x3E };
+
+    private static void RemoveHotspotMark(RawImage img)
+    {
+        int bestScore = 0, bestX = 0, bestY = 0;
+        for (int y = 0; y < img.Height; y++)
+        {
+            for (int x = 0; x < img.Width; x++)
+            {
+                int score = 0;
+                for (int i = 0; i < HotspotMarkAlpha.Length; i++)
+                {
+                    int d = 2 * (i + 1), a = HotspotMarkAlpha[i];
+                    score += IsMarkDot(img, x - d, y, a) + IsMarkDot(img, x + d, y, a) + IsMarkDot(img, x, y - d, a) + IsMarkDot(img, x, y + d, a);
+                }
+                if (score <= bestScore) continue;
+                bestScore = score;
+                bestX = x;
+                bestY = y;
+            }
+        }
+        if (bestScore < 3) return;
+        for (int i = 0; i < HotspotMarkAlpha.Length; i++)
+        {
+            int d = 2 * (i + 1);
+            FixMarkDot(img, bestX - d, bestY, 0, 1);
+            FixMarkDot(img, bestX + d, bestY, 0, 1);
+            FixMarkDot(img, bestX, bestY - d, 1, 0);
+            FixMarkDot(img, bestX, bestY + d, 1, 0);
+        }
+    }
+
+    /// <summary>
+    /// The cursor is drawn over the mark, so a dot shows as more coverage than the two pixels beside it across the arm.
+    /// Such a pixel is rebuilt from that pair: a bare dot becomes transparent, a dot under a glow takes the glow's color.
+    /// Pixels the mark doesn't show through, such as opaque outlines, are left alone.
+    /// </summary>
+    private static void FixMarkDot(RawImage img, int x, int y, int acrossX, int acrossY)
+    {
+        if (x < 0 || y < 0 || x >= img.Width || y >= img.Height) return;
+        uint pixel = (uint)img.Pixels[y * img.Width + x];
+        uint a = PixelOrClear(img, x - acrossX, y - acrossY), b = PixelOrClear(img, x + acrossX, y + acrossY);
+        if (pixel >> 24 <= Math.Max(a >> 24, b >> 24) + 8) return;
+        uint mixed = 0;
+        for (int shift = 0; shift < 32; shift += 8)
+            mixed |= ((((a >> shift) & 0xFF) + ((b >> shift) & 0xFF)) / 2) << shift;
+        img.Pixels[y * img.Width + x] = unchecked((int)mixed);
+    }
+
+    private static uint PixelOrClear(RawImage img, int x, int y) =>
+        x < 0 || y < 0 || x >= img.Width || y >= img.Height ? 0u : (uint)img.Pixels[y * img.Width + x];
+
+    private static int IsMarkDot(RawImage img, int x, int y, int alpha) =>
+        x >= 0 && y >= 0 && x < img.Width && y < img.Height && img.Pixels[y * img.Width + x] == unchecked((int)((uint)alpha << 24 | 0x7F7F7F)) ? 1 : 0;
+
     private static CursorPreview Render(List<RawImage> frames, int[] sequence, int[] durations, int boxPx)
     {
         // Union of visible bounds across all frames, in canvas fractions, so animations don't jitter.

@@ -15,6 +15,15 @@ internal sealed class ImportResult
     public readonly List<string> ExistingIds = new();
 }
 
+/// <summary>Where an import came from; saved in the pack's pack.ini so its credits show in the app.</summary>
+internal sealed class ImportDetails
+{
+    public string Name, Author, License, Url;
+
+    /// <summary>File name to cursor role, as tagged by the site the pack came from.</summary>
+    public Dictionary<string, int> RoleFiles;
+}
+
 /// <summary>
 /// The library shown in the grid: the Windows styles, installed user schemes, packs imported into
 /// %LOCALAPPDATA%\Cursors\Packs, and a snapshot of whatever was active before the app was first used.
@@ -30,7 +39,7 @@ internal sealed class PackLibrary
 
     /// <summary>Display order of categories; anything unknown sorts just before packs the user added.</summary>
     public static readonly string[] CategoryOrder =
-        { WindowsCategory, "Minimal", "macOS", "Retro", "Pixel & Gaming", "Neon", "Glass", "Cute", "Animated", AddedCategory };
+        { WindowsCategory, "Minimal", "macOS", "Retro", "Pixel & Gaming", "Neon", "Glass", "Cute", "Animated", CommunityCatalog.Category, AddedCategory };
 
     public IReadOnlyList<CursorPack> Packs { get; private set; } = Array.Empty<CursorPack>();
     public CursorPack WindowsDefault { get; private set; }
@@ -49,6 +58,7 @@ internal sealed class PackLibrary
         LoadLibraryPacks(packs);
         LoadUserSchemes(packs);
         LoadPrevious(packs, windowsDefault);
+        LoadCatalog(packs);
         return new PackLibrary
         {
             WindowsDefault = windowsDefault,
@@ -288,6 +298,30 @@ internal sealed class PackLibrary
         }
     }
 
+    // ---- Community catalog ---------------------------------------------------------------------
+
+    /// <summary>Community sets from the catalog. One that's been downloaded takes its catalog entry's place.</summary>
+    private static void LoadCatalog(List<CursorPack> packs)
+    {
+        var downloaded = new Dictionary<string, CursorPack>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pack in packs)
+            if (pack.Kind == PackKind.Library && pack.Url != null && !downloaded.ContainsKey(pack.Url)) downloaded[pack.Url] = pack;
+
+        foreach (var entry in CommunityCatalog.Load())
+        {
+            if (!downloaded.TryGetValue(entry.Url, out var pack))
+            {
+                packs.Add(entry);
+                continue;
+            }
+            pack.Category = entry.Category;
+            pack.Order = entry.Order;
+            pack.Downloads = entry.Downloads;
+            pack.CatalogPreviews = entry.CatalogPreviews;
+            if (entry.Author != null) pack.Author = entry.Author;
+        }
+    }
+
     // ---- Imported packs ------------------------------------------------------------------------
 
     private static void LoadLibraryPacks(List<CursorPack> packs)
@@ -311,6 +345,9 @@ internal sealed class PackLibrary
             {
                 var values = IniFile.Read(ini);
                 pack.SchemeName = values.TryGetValue("name", out var n) && n.Length > 0 ? n : folderName;
+                pack.Author = values.TryGetValue("author", out var author) && author.Length > 0 ? author : null;
+                pack.License = values.TryGetValue("license", out var license) && license.Length > 0 ? license : null;
+                pack.Url = values.TryGetValue("url", out var url) && url.Length > 0 ? url : null;
                 for (int i = 0; i < CursorPack.RoleCount; i++)
                     if (values.TryGetValue(CursorPack.RegistryNames[i], out var f) && f.Length > 0)
                         pack.Values[i] = Path.Combine(dir, f);
@@ -333,7 +370,7 @@ internal sealed class PackLibrary
         return pack;
     }
 
-    public static ImportResult Import(IEnumerable<string> paths)
+    public static ImportResult Import(IEnumerable<string> paths, ImportDetails details = null)
     {
         var result = new ImportResult();
         var loose = new List<string>();
@@ -343,11 +380,11 @@ internal sealed class PackLibrary
             {
                 string ext = Path.GetExtension(path);
                 if (Directory.Exists(path))
-                    AddAll(PackDetection.Scan(path, Path.GetFileName(path.TrimEnd('\\'))), result);
+                    AddAll(PackDetection.Scan(path, Path.GetFileName(path.TrimEnd('\\'))), result, details);
                 else if (ext.Equals(".zip", StringComparison.OrdinalIgnoreCase))
-                    ImportZip(path, result);
+                    ImportZip(path, result, details);
                 else if (ext.Equals(".inf", StringComparison.OrdinalIgnoreCase))
-                    AddAll(new[] { PackDetection.ParseInf(path, Path.GetDirectoryName(path)) }, result);
+                    AddAll(new[] { PackDetection.ParseInf(path, Path.GetDirectoryName(path)) }, result, details);
                 else if (PackDetection.IsCursorFile(path))
                     loose.Add(path);
             }
@@ -360,14 +397,14 @@ internal sealed class PackLibrary
             string name = files.Count == 1 ? Path.GetFileNameWithoutExtension(files[0]) : Path.GetFileName(group.Key);
             try
             {
-                AddAll(new[] { PackDetection.FromFiles(files, name) }, result);
+                AddAll(new[] { PackDetection.FromFiles(files, name) }, result, details);
             }
             catch { }
         }
         return result;
     }
 
-    private static void ImportZip(string zipPath, ImportResult result)
+    private static void ImportZip(string zipPath, ImportResult result, ImportDetails details)
     {
         string temp = Path.Combine(Path.GetTempPath(), "Cursors-" + Guid.NewGuid().ToString("N"));
         try
@@ -391,7 +428,9 @@ internal sealed class PackLibrary
                     catch { }
                 }
             }
-            AddAll(PackDetection.Scan(temp, Path.GetFileNameWithoutExtension(zipPath)), result);
+            var found = PackDetection.Scan(temp, Path.GetFileNameWithoutExtension(zipPath));
+            if (details?.RoleFiles?.Count > 0) found = ApplyRoleHints(found, temp, details.RoleFiles);
+            AddAll(found, result, details);
         }
         finally
         {
@@ -403,13 +442,41 @@ internal sealed class PackLibrary
         }
     }
 
-    private static void AddAll(IEnumerable<DetectedPack> detected, ImportResult result)
+    /// <summary>
+    /// Uses the roles the hosting site tagged each file with (rw-designer labels every cursor in a set) instead of
+    /// guessing from file names. Only for a download that is one pack of loose files; an install.inf stays in charge.
+    /// </summary>
+    private static List<DetectedPack> ApplyRoleHints(List<DetectedPack> detected, string root, Dictionary<string, int> roleFiles)
     {
-        foreach (var pack in detected)
-            if (pack != null && pack.Count > 0) AddToLibrary(pack, result);
+        if (detected.Count > 1 || detected.Any(p => p.Origin != null && p.Origin.EndsWith(".inf", StringComparison.OrdinalIgnoreCase))) return detected;
+        var files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string file in Directory.GetFiles(root, "*.*", System.IO.SearchOption.AllDirectories))
+            if (PackDetection.IsCursorFile(file) && !files.ContainsKey(Path.GetFileName(file))) files[Path.GetFileName(file)] = file;
+
+        var guess = detected.FirstOrDefault();
+        var pack = new DetectedPack { Name = guess?.Name, Origin = guess?.Origin ?? root };
+        foreach (var hint in roleFiles)
+            if (hint.Value >= 0 && hint.Value < CursorPack.RoleCount && pack.Files[hint.Value] == null && files.TryGetValue(hint.Key, out var file))
+                pack.Files[hint.Value] = file;
+        if (pack.Files[CursorPack.Arrow] == null) return detected;
+
+        // Roles the site doesn't tag (location, person) keep what the file names suggest, using files not already placed.
+        if (guess != null)
+            for (int i = 0; i < CursorPack.RoleCount; i++)
+                if (pack.Files[i] == null && guess.Files[i] != null && Array.IndexOf(pack.Files, guess.Files[i]) < 0 && !roleFiles.ContainsKey(Path.GetFileName(guess.Files[i])))
+                    pack.Files[i] = guess.Files[i];
+        return new List<DetectedPack> { pack };
     }
 
-    private static void AddToLibrary(DetectedPack detected, ImportResult result)
+    private static void AddAll(IEnumerable<DetectedPack> detected, ImportResult result, ImportDetails details = null)
+    {
+        var packs = detected.Where(p => p != null && p.Count > 0).ToList();
+        // A download holding a single pack takes the name it was published under.
+        if (packs.Count == 1 && !string.IsNullOrWhiteSpace(details?.Name)) packs[0].Name = details.Name;
+        foreach (var pack in packs) AddToLibrary(pack, result, details);
+    }
+
+    private static void AddToLibrary(DetectedPack detected, ImportResult result, ImportDetails details)
     {
         Directory.CreateDirectory(AppPaths.PacksDir);
         string name = CleanName(detected.Name);
@@ -452,7 +519,7 @@ internal sealed class PackLibrary
             relative[i] = fileName;
         }
 
-        WritePackIni(dest, uniqueName, relative);
+        WritePackIni(dest, uniqueName, relative, details);
         result.AddedIds.Add("lib:" + Path.GetFileName(dest));
     }
 
@@ -468,10 +535,13 @@ internal sealed class PackLibrary
         return true;
     }
 
-    private static void WritePackIni(string dir, string name, string[] files)
+    private static void WritePackIni(string dir, string name, string[] files, ImportDetails details = null)
     {
         string prefix = Path.GetFullPath(dir).TrimEnd('\\') + "\\";
         var values = new List<KeyValuePair<string, string>> { new("name", name) };
+        if (!string.IsNullOrWhiteSpace(details?.Author)) values.Add(new("author", details.Author));
+        if (!string.IsNullOrWhiteSpace(details?.License)) values.Add(new("license", details.License));
+        if (!string.IsNullOrWhiteSpace(details?.Url)) values.Add(new("url", details.Url));
         for (int i = 0; i < CursorPack.RoleCount; i++)
         {
             string f = files[i];

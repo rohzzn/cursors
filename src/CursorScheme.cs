@@ -72,7 +72,7 @@ internal static class CursorScheme
         CursorPack preferred = null, byName = null, any = null;
         foreach (var pack in packs)
         {
-            if (!Matches(pack, fallback, normalized)) continue;
+            if (pack.Kind == PackKind.Catalog || !Matches(pack, fallback, normalized)) continue;
             if (pack.Id == preferredId) preferred = pack;
             if (byName == null && string.Equals(pack.SchemeName, name, StringComparison.OrdinalIgnoreCase)) byName = pack;
             any ??= pack;

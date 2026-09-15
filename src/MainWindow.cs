@@ -101,6 +101,7 @@ internal sealed partial class MainWindow : Form
 
         _dpi = DeviceDpi > 0 ? DeviceDpi : 96;
         _fonts = new UiFonts(S);
+        InitSearch();
         _settings = IniFile.Read(AppPaths.SettingsFile);
         _filter = _settings.TryGetValue("filter", out var filter) && filter.Length > 0 ? filter : null;
         _timer.Tick += (_, _) => OnTick();
@@ -205,9 +206,12 @@ internal sealed partial class MainWindow : Form
     private void UpdateDpi(int dpi)
     {
         _dpi = dpi;
-        _fonts.Dispose();
+        var oldFonts = _fonts;
         _fonts = new UiFonts(S);
+        if (_search != null) _search.Font = _fonts.Label;
+        oldFonts.Dispose();
         _restoreTextWidth = -1;
+        _titleTextWidth = -1;
         _chipTextWidths.Clear();
         if (IsHandleCreated) MinimumSize = new Size((int)(520 * S), (int)(420 * S));
 
@@ -281,7 +285,7 @@ internal sealed partial class MainWindow : Form
             card.Peek.Snap(0);
         }
         _cards.Clear();
-        _cards.AddRange(_allCards.Where(c => _filter == null || c.Category == _filter));
+        _cards.AddRange(_allCards.Where(c => (_filter == null || c.Category == _filter) && MatchesSearch(c)));
         if (animate)
         {
             foreach (var card in _cards)
@@ -306,6 +310,7 @@ internal sealed partial class MainWindow : Form
     private void LayoutCards()
     {
         LayoutChips();
+        LayoutSearch();
         float s = S, gap = Gap * s, avail = ClientSize.Width - 2 * PadX * s;
         _columns = Math.Max(1, (int)((avail + gap) / (MinCardSize * s + gap)));
         float size = Math.Max(60 * s, (float)Math.Floor((avail - gap * (_columns - 1)) / _columns));
@@ -376,6 +381,7 @@ internal sealed partial class MainWindow : Form
     private void StartPreviewLoad(bool reloadAll = false)
     {
         int generation = ++_previewGeneration;
+        ResetCatalogQueue();
         int box = (int)Math.Round(PreviewBox * S);
         var packs = _allCards.Where(c => c.Pack != null && (reloadAll || c.Pack.Preview == null)).Select(c => c.Pack).ToList();
 
@@ -384,11 +390,13 @@ internal sealed partial class MainWindow : Form
             var decoded = new Dictionary<string, CursorPreview>(StringComparer.OrdinalIgnoreCase);
             foreach (var pack in packs)
             {
-                string path = pack.PreviewPath;
+                // Community cards show the site's image until they're downloaded; uncached images load as cards come into view.
+                bool image = pack.Kind == PackKind.Catalog;
+                string path = image ? CommunityCatalog.CachedImage(pack.CatalogPreviews?[0]) : pack.PreviewPath;
                 if (path == null) continue;
                 if (!decoded.TryGetValue(path, out var preview))
                 {
-                    preview = CursorDecoder.CreatePreview(path, box);
+                    preview = image ? CursorDecoder.CreateImagePreview(path, box) : CursorDecoder.CreatePreview(path, box);
                     decoded[path] = preview;
                 }
                 var result = preview;
@@ -417,7 +425,11 @@ internal sealed partial class MainWindow : Form
             if (preview != null && !_previewCache.ContainsValue(preview)) _stalePreviews.Add(preview);
             return;
         }
-        if (_previewCache.TryGetValue(key, out var cached)) preview = cached;
+        if (_previewCache.TryGetValue(key, out var cached))
+        {
+            if (preview != null && preview != cached) _stalePreviews.Add(preview);
+            preview = cached;
+        }
         else _previewCache[key] = preview;
         if (preview == null) return;
 
@@ -440,6 +452,8 @@ internal sealed partial class MainWindow : Form
     private void OnPreviewBatchDone(int generation)
     {
         if (generation != _previewGeneration) return;
+        _previewBatchPending = false;
+        InvalidateGrid(); // cards on screen then ask for Community previews that weren't cached
         var inUse = new HashSet<CursorPreview>(_allCards.Where(c => c.Pack?.Preview != null).Select(c => c.Pack.Preview));
         foreach (var preview in _stalePreviews.ToList())
         {
@@ -457,7 +471,9 @@ internal sealed partial class MainWindow : Form
         int box = (int)Math.Round(PeekBox * S), generation = _previewGeneration;
         ThreadPool.QueueUserWorkItem(_ =>
         {
-            var previews = PeekRoles.Select(role => pack.SourcePathFor(role) is string path ? CursorDecoder.CreatePreview(path, box) : null).ToArray();
+            var previews = pack.Kind == PackKind.Catalog
+                ? (pack.CatalogPreviews ?? new string[4]).Skip(1).Select(id => CommunityCatalog.FetchImage(id) is string image ? CursorDecoder.CreateImagePreview(image, box) : null).ToArray()
+                : PeekRoles.Select(role => pack.SourcePathFor(role) is string path ? CursorDecoder.CreatePreview(path, box) : null).ToArray();
             try
             {
                 BeginInvoke((Action)(() =>
@@ -493,7 +509,12 @@ internal sealed partial class MainWindow : Form
     {
         if (card.IsAdd)
         {
-            BrowseForPacks();
+            ShowAddMenu(card);
+            return;
+        }
+        if (card.Pack.Kind == PackKind.Catalog)
+        {
+            DownloadCatalogPack(card);
             return;
         }
         SetSelected(card.Pack.Id);
@@ -596,15 +617,16 @@ internal sealed partial class MainWindow : Form
         string folder = pack.Folder ?? (pack.PreviewPath is string p ? Path.GetDirectoryName(p) : null);
         bool hasFolder = folder != null && Directory.Exists(folder);
         bool hasUrl = Uri.TryCreate(pack.Url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp);
-        string credit = string.Join(" · ", new[] { pack.Author, pack.License }.Where(x => !string.IsNullOrWhiteSpace(x)));
+        string credit = string.Join(" · ", new[] { pack.Author, pack.License, pack.Downloads > 0 ? CommunityCatalog.FormatDownloads(pack.Downloads) : null }.Where(x => !string.IsNullOrWhiteSpace(x)));
 
         IntPtr menu = Native.CreatePopupMenu();
         try
         {
-            Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)1, "Apply");
+            bool remote = pack.Kind == PackKind.Catalog;
+            Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)1, remote ? "Download and apply" : "Apply");
             Native.AppendMenu(menu, Native.MF_SEPARATOR, UIntPtr.Zero, null);
-            if (hasUrl) Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)4, "Visit project page");
-            Native.AppendMenu(menu, Native.MF_STRING | (hasFolder ? 0 : Native.MF_GRAYED), (UIntPtr)2, "Open folder");
+            if (hasUrl) Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)4, pack.Category == CommunityCatalog.Category ? "Visit set page" : "Visit project page");
+            if (!remote) Native.AppendMenu(menu, Native.MF_STRING | (hasFolder ? 0 : Native.MF_GRAYED), (UIntPtr)2, "Open folder");
             if (pack.Kind == PackKind.Library)
             {
                 Native.AppendMenu(menu, Native.MF_SEPARATOR, UIntPtr.Zero, null);
@@ -743,6 +765,7 @@ internal sealed partial class MainWindow : Form
         }
 
         if (StepChrome(dt)) busy = true;
+        if (StepCatalog(frameTick)) busy = true;
 
         if (_dropHover.Step(dt, 50))
         {

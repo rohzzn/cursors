@@ -14,6 +14,8 @@ internal sealed partial class MainWindow
         Card,
         Chip,
         Restore,
+        Search,
+        SearchClear,
         ScrollThumb,
         ScrollTrack,
     }
@@ -29,6 +31,8 @@ internal sealed partial class MainWindow
         if (p.Y < TitleBarPx)
         {
             if (RestoreButtonRect().Contains(p)) zone = Zone.Restore;
+            else if (_query.Length > 0 && SearchClearRect().Contains(p)) zone = Zone.SearchClear;
+            else if (SearchRect().Contains(p)) zone = Zone.Search;
             return -1;
         }
         if (p.Y < ViewportTopPx)
@@ -76,6 +80,7 @@ internal sealed partial class MainWindow
         }
         for (int i = 0; i < _chips.Count; i++) _chips[i].Hover.Target = zone == Zone.Chip && i == index ? 1 : 0;
         _restoreHover.Target = zone == Zone.Restore ? 1 : 0;
+        _searchClearHover.Target = zone == Zone.SearchClear ? 1 : 0;
         _scrollbarHover.Target = zone is Zone.ScrollThumb or Zone.ScrollTrack || _draggingThumb ? 1 : 0;
         StartAnimation();
     }
@@ -124,6 +129,9 @@ internal sealed partial class MainWindow
             case Zone.Restore:
                 _restorePress.Target = 1;
                 break;
+            case Zone.Search:
+                FocusSearch();
+                break;
             case Zone.ScrollThumb:
                 _draggingThumb = true;
                 _thumbGrabOffset = e.Y - ScrollThumbRect().Y;
@@ -133,7 +141,7 @@ internal sealed partial class MainWindow
                 _scroll.Target = Clamp(_scroll.Target + direction * ViewportHeight * 0.9f, 0, MaxScroll);
                 break;
         }
-        Capture = zone != Zone.None;
+        Capture = zone != Zone.None && zone != Zone.Search;
         StartAnimation();
     }
 
@@ -169,6 +177,10 @@ internal sealed partial class MainWindow
                 _restorePress.Target = 0;
                 if (zone == Zone.Restore) RestoreDefault();
                 break;
+            case Zone.SearchClear when zone == Zone.SearchClear:
+                _search.Clear();
+                FocusSearch();
+                break;
         }
 
         if (!IsDisposed)
@@ -188,6 +200,8 @@ internal sealed partial class MainWindow
 
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
+        if (ProcessSearchKey(ref msg, keyData, out bool handled))
+            return handled || base.ProcessCmdKey(ref msg, keyData);
         switch (keyData)
         {
             case Keys.Left: MoveFocus(-1, 0); return true;
@@ -231,6 +245,19 @@ internal sealed partial class MainWindow
                 return true;
             case Keys.Control | Keys.O:
                 BrowseForPacks();
+                return true;
+            case Keys.Control | Keys.L:
+                PromptImportLink();
+                return true;
+            case Keys.Control | Keys.V:
+                string clip = null;
+                try
+                {
+                    clip = Clipboard.ContainsText() ? Clipboard.GetText().Trim() : null;
+                }
+                catch { }
+                if (!LinkImport.LooksLikeLink(clip)) return base.ProcessCmdKey(ref msg, keyData);
+                PromptImportLink(clip);
                 return true;
             case Keys.F5:
                 ReloadLibrary();
@@ -290,8 +317,8 @@ internal sealed partial class MainWindow
     protected override void OnDragEnter(DragEventArgs e)
     {
         base.OnDragEnter(e);
-        bool files = e.Data.GetDataPresent(DataFormats.FileDrop);
-        e.Effect = files ? DragDropEffects.Copy : DragDropEffects.None;
+        bool files = e.Data.GetDataPresent(DataFormats.FileDrop) || DroppedLink(e.Data) != null;
+        e.Effect = files ? DropEffect(e) : DragDropEffects.None;
         _dropHover.Target = files ? 1 : 0;
         StartAnimation();
     }
@@ -299,7 +326,7 @@ internal sealed partial class MainWindow
     protected override void OnDragOver(DragEventArgs e)
     {
         base.OnDragOver(e);
-        e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) || DroppedLink(e.Data) != null ? DropEffect(e) : DragDropEffects.None;
     }
 
     protected override void OnDragLeave(EventArgs e)
@@ -315,5 +342,10 @@ internal sealed partial class MainWindow
         _dropHover.Target = 0;
         StartAnimation();
         if (e.Data.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0) ImportAsync(paths);
+        else if (DroppedLink(e.Data) is string link) ImportLinkAsync(link);
     }
+
+    // Browsers usually offer links as Link or Copy; files from Explorer as Copy or Move.
+    private static DragDropEffects DropEffect(DragEventArgs e) =>
+        (e.AllowedEffect & DragDropEffects.Copy) != 0 ? DragDropEffects.Copy : DragDropEffects.Link;
 }

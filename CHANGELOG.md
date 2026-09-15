@@ -2,6 +2,20 @@
 
 All notable changes to Cursors are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-09-15
+
+### Added
+
+- **Search.** Filter the library as you type by pack name, style or author, combined with the category chips. Start typing anywhere in the window, or press <kbd>Ctrl</kbd>+<kbd>F</kbd>.
+- **Import from a link.** Add a cursor set straight from a set page, such as one on rw-designer.com, or from a direct `.zip`, `.cur` or `.ani` link. Use **Add pack → From a link…**, press <kbd>Ctrl</kbd>+<kbd>L</kbd>, paste a link, or drag one from your browser onto the window. The set's name, license and source are saved with it and shown when you right-click it.
+- **Community section.** The 500 most-downloaded complete cursor sets on rw-designer.com, listed in `packs/catalog.tsv` by the new `tools/update-catalog.ps1`. Previews load as cards scroll into view. Clicking a set downloads it, adds it to your library and applies it. Right-click shows its author, license and download count.
+- **Start menu and desktop shortcuts.** The first launch adds both, so Cursors shows up in Windows search, and moves them along if the app folder moves. `Cursors.exe --uninstall` restores the Windows cursors and removes them.
+
+### Changed
+
+- **Better role detection.** Imports understand cursor-site file names such as `Diamond Sword - Normal Select.cur`, where the role comes after the last dash. Sets from rw-designer.com use the role the site tags each cursor with.
+- **Credits for added packs.** Packs you add keep their author, license and source link.
+
 ## [1.0.0] - 2026-09-14
 
 First public release.

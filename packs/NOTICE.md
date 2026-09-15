@@ -2,6 +2,8 @@
 
 The cursor packs in this folder are separate works by their authors, redistributed unchanged in design under their own licenses. Full license texts are in `LICENSES/`. They are not part of the Cursors app code.
 
+`catalog.tsv` is not a cursor pack. It lists the Community sets hosted on rw-designer.com, with their names, authors, download counts, licenses and page links. No files from those sets are included here. The app downloads a set from rw-designer.com only when someone picks it, and each set is licensed by its author as stated on its page.
+
 Changes made for bundling:
 
 - Windows builds: files renamed to Windows role names; animated cursors keep only their 32, 48 and 64 px frames.

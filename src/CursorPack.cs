@@ -10,6 +10,7 @@ internal enum PackKind
     Library,
     User,
     Previous,
+    Catalog, // listed in the Community catalog; downloaded the first time it's applied
 }
 
 /// <summary>A full cursor scheme. Role order matches the Windows scheme string format.</summary>
@@ -44,6 +45,10 @@ internal sealed class CursorPack
     public string Author { get; set; }
     public string License { get; set; }
     public string Url { get; set; }
+
+    /// <summary>Community catalog: downloads on the hosting site, and preview image ids for the arrow, link, text and busy cursors.</summary>
+    public int Downloads { get; set; }
+    public string[] CatalogPreviews { get; set; }
 
     /// <summary>Folder that holds the pack's files, when it has one of its own.</summary>
     public string Folder { get; set; }

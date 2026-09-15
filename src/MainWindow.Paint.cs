@@ -51,6 +51,8 @@ internal sealed partial class MainWindow
                 if (_cards[i].IsAdd) DrawAddCard(g, _cards[i], r, i);
                 else DrawCard(g, _cards[i], r, i, now);
             }
+            RequestVisibleCatalogPreviews();
+            if (_cards.Count == 0) DrawEmptyState(g);
             g.Restore(state);
             DrawScrollbar(g);
         }
@@ -133,6 +135,7 @@ internal sealed partial class MainWindow
         TextRenderer.DrawText(g, card.Pack.Label, _fonts.Label, labelRect, textColor, CenteredText);
 
         if (selected > 0.01f) DrawBadge(g, r, selected);
+        if (card.Pack.Kind == PackKind.Catalog) DrawCatalogExtras(g, card, r, areaH, now);
     }
 
     /// <summary>A row of the pack's link, text and busy cursors that fades in under the pointer on hover.</summary>
@@ -292,6 +295,7 @@ internal sealed partial class MainWindow
             g.DrawPath(pen, path);
         var btnText = Theme.Lerp(_windowActive ? Theme.Text : Theme.TextSecondary, Theme.TextSecondary, rp * 0.6f);
         TextRenderer.DrawText(g, RestoreLabel, _fonts.Button, rb, btnText, CenteredText & ~TextFormatFlags.PreserveGraphicsClipping);
+        DrawSearchBox(g);
 
         DrawCaptionButton(g, Native.HTMINBUTTON, "\uE921", _minHover.Value, false);
         DrawCaptionButton(g, Native.HTMAXBUTTON, WindowState == FormWindowState.Maximized ? "\uE923" : "\uE922", _maxHover.Value, false);

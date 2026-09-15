@@ -6,12 +6,12 @@
 
 **One-click cursor packs for Windows**
 
-A small, native app with 60 openly licensed cursor styles. Click a card and your whole pointer scheme changes instantly.
+A small, native app with 60 built-in cursor styles and 500 popular community sets. Click a card and your whole pointer scheme changes instantly.
 
 [![Latest release](https://img.shields.io/github/v/release/rohzzn/cursors?label=download&color=2b2b2b)](https://github.com/rohzzn/cursors/releases/latest)
 ![Windows 10 and 11](https://img.shields.io/badge/Windows-10%20%7C%2011-2b2b2b)
 ![.NET Framework 4.8](https://img.shields.io/badge/.NET%20Framework-4.8-2b2b2b)
-![App size](https://img.shields.io/badge/app-140%20KB-2b2b2b)
+![App size](https://img.shields.io/badge/app-171%20KB-2b2b2b)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2b2b2b)](LICENSE)
 
 <br>
@@ -24,17 +24,20 @@ A small, native app with 60 openly licensed cursor styles. Click a card and your
 
 - **One click, the whole scheme.** Every card sets all 17 cursor types Windows defines: normal, link, text, busy, working, the four resizes, move, unavailable, precision, help, handwriting, alternate, location and person.
 - **60 packs out of the box.** Minimal, macOS-style, retro, pixel and gaming, neon, glass, cute and animated styles, each with credits and a license.
+- **500 community sets.** The most-downloaded complete sets from [rw-designer.com](https://www.rw-designer.com/cursor-library) are in the **Community** section, including 23 Minecraft sets and RuneScape, Mario, Zelda, Sonic and Undertale ones. Previews load as you scroll, and one click downloads and applies a set.
 - **Previews.** Large previews of every pack, with animated cursors playing and each pack's link, text and busy cursors fading in when you hover.
+- **Search.** Start typing to find a pack by name, style or author.
 - **Your own packs.** Drop a `.zip`, an `install.inf` or loose `.cur`/`.ani` files onto the window. Roles are detected automatically, including from `install.inf` files that list them out of order.
+- **Import from a link.** Paste or drag in a link to a cursor set page, such as one on [rw-designer.com](https://www.rw-designer.com/cursor-library), and Cursors downloads that set into your library with its name, license and source.
 - **Stays applied.** Your choice survives restarts using the same settings as Mouse Properties. No startup entry, no background process.
-- **Light and native.** A single 140 KB exe that opens in well under a second and uses no CPU while idle. It has a dark title bar with Windows 11 snap layouts and handles per-monitor DPI.
-- **Private.** No account, no network access, no telemetry.
+- **Light and native.** A single 171 KB exe that opens in well under a second and uses no CPU while idle. It has a dark title bar with Windows 11 snap layouts and handles per-monitor DPI.
+- **Private.** No account and no telemetry. Cursors only goes online to show Community previews and to download a set or link you pick.
 
 ## Download
 
-1. Download **`Cursors-1.0.0-windows.zip`** from the [latest release](https://github.com/rohzzn/cursors/releases/latest).
+1. Download the **`Cursors-<version>-windows.zip`** file from the [latest release](https://github.com/rohzzn/cursors/releases/latest).
 2. Extract it anywhere, keeping `Cursors.exe` and the `Packs` folder together.
-3. Run **`Cursors.exe`**. There's nothing to install, and admin rights aren't needed.
+3. Run **`Cursors.exe`**. There's nothing to install, and admin rights aren't needed. The first launch adds Cursors to the Start menu and the desktop, so you can find it in Windows search.
 
 **If you see "Windows protected your PC":** the app isn't code-signed yet, so SmartScreen may warn on first launch. Choose **More info → Run anyway**. Each release lists the zip's SHA-256 so you can check your download.
 
@@ -52,6 +55,8 @@ A small, native app with 60 openly licensed cursor styles. Click a card and your
     <td align="center"><sub>Filter the library by style</sub></td>
   </tr>
 </table>
+
+<p align="center"><img src="docs/screenshot-community.png" alt="The Community section, showing popular cursor sets from rw-designer.com with a set's link, text and busy cursors on hover" width="880"><br><sub>500 community sets, with previews that load as you scroll</sub></p>
 
 ## The library
 
@@ -76,7 +81,7 @@ Every pack was checked before it was included:
 - **Contact sheets:** a sheet of every role was reviewed by eye.
 - **Real apply:** each pack was applied for real, confirming Windows loaded all 17 cursors.
 
-Packs with unclear licensing, such as Figma, Minecraft and other game or brand cursors, were left out on purpose.
+Packs with unclear licensing, such as Figma, Minecraft and other game or brand cursors, were left out of the bundled library on purpose. Popular fan-made game sets are in the [Community](#community-sets) section instead, downloaded from rw-designer.com when you pick one.
 
 ## Using Cursors
 
@@ -84,13 +89,41 @@ Packs with unclear licensing, such as Figma, Minecraft and other game or brand c
 | --- | --- |
 | Apply a pack | Click its card, or use the arrow keys and <kbd>Enter</kbd> |
 | See more of a pack | Hover its card |
+| Find a pack | Start typing, or press <kbd>Ctrl</kbd>+<kbd>F</kbd>. <kbd>Esc</kbd> clears the search, and <kbd>Enter</kbd> or <kbd>↓</kbd> jumps to the results |
 | Filter by style | Click a category chip, or press <kbd>Ctrl</kbd>+<kbd>Tab</kbd> |
+| Get a community set | Open **Community** and click a card. The set downloads, applies and stays in your library |
 | Go back to the Windows cursors | Click **Restore default** in the title bar |
-| Add your own packs | Use the **Add pack** card or <kbd>Ctrl</kbd>+<kbd>O</kbd>, or drag folders and zips onto the window |
+| Add your own packs | Use **Add pack → From files…** or <kbd>Ctrl</kbd>+<kbd>O</kbd>, or drag folders and zips onto the window |
+| Add a pack from a link | Use **Add pack → From a link…** or <kbd>Ctrl</kbd>+<kbd>L</kbd>, press <kbd>Ctrl</kbd>+<kbd>V</kbd> with a link copied, or drag a link from your browser onto the window |
 | See credits, the project page or files | Right-click a card |
 | Remove a pack you added | Right-click it and choose **Remove from library** |
 | Rescan the library | <kbd>F5</kbd> |
 | Restore defaults without the window | Run `Cursors.exe --restore` |
+
+## Community sets
+
+The **Community** section lists the 500 most-downloaded cursor sets on [rw-designer.com](https://www.rw-designer.com/cursor-library) that work as a scheme. Each one is offered as a single download, has a normal pointer and covers at least three cursor roles. Sets the site marks as adult content are left out.
+
+- **Nothing is bundled.** The app ships only the list, [`packs/catalog.tsv`](packs/catalog.tsv): names, authors, download counts, licenses and links.
+- **Previews load as you scroll.** Each card's preview image comes from rw-designer.com when the card scrolls into view, a couple at a time, and is cached in `%LOCALAPPDATA%\Cursors\Catalog`.
+- **One click to apply.** Clicking a card downloads that set, maps each file to the role the site tags it with, adds it to your library and applies it. Afterwards the card works offline like any other pack.
+- **Licenses come from the authors.** Right-click a card to see its author, license and download count, or to open its page.
+
+The list is refreshed with `tools\update-catalog.ps1`; see [Building from source](#building-from-source).
+
+## Importing from a link
+
+Found a set you like on a cursor site? Copy the link to its page and press <kbd>Ctrl</kbd>+<kbd>L</kbd> in Cursors, or drag the link from your browser onto the window.
+
+| Link | What Cursors does |
+| --- | --- |
+| A set page on rw-designer.com, like `https://www.rw-designer.com/cursor-set/…` | Reads the page once for the set's name, license and download, then downloads the set |
+| A single cursor page on rw-designer.com | Downloads that one cursor |
+| A direct link to a `.zip`, `.cur` or `.ani` file | Downloads the file |
+
+Only the link you give it is downloaded, and nothing is uploaded. Downloads are limited to 50 MB. The set is copied into your library under **Added**, and roles are detected from its file names such as `Diamond Sword - Normal Select.cur`. Right-click it to see the author, license and source page.
+
+Imported sets stay on your PC and are never added to this project. Each set's license is chosen by the person who uploaded it, so check it before you share or reuse the files.
 
 ## How it works
 
@@ -98,11 +131,11 @@ Packs with unclear licensing, such as Figma, Minecraft and other game or brand c
 - **Installing.** A pack's files are copied to `%LOCALAPPDATA%\Cursors` the first time it's applied, so your cursor keeps working if you move or delete the app.
 - **Undo.** On first launch, Cursors saves your existing cursor setup. If that setup isn't one of the packs, it appears under **Added** so you can get it back.
 
-**Where it writes:** only `HKCU\Control Panel\Cursors` and `%LOCALAPPDATA%\Cursors` (settings and installed packs).
+**Where it writes:** `HKCU\Control Panel\Cursors`, `%LOCALAPPDATA%\Cursors` (settings, installed packs, packs you add and cached Community previews), and a Cursors shortcut in the Start menu and on the desktop.
 
 ## Uninstall
 
-1. Open Cursors and click **Restore default**, or run `Cursors.exe --restore`.
+1. Run `Cursors.exe --uninstall`. It puts back the Windows cursors and removes the Start menu and desktop shortcuts.
 2. Delete the folder you extracted.
 3. Optionally, delete `%LOCALAPPDATA%\Cursors`.
 
@@ -117,13 +150,13 @@ No. It only runs while its window is open. The cursor you pick stays applied aft
 <details>
 <summary><b>Can I use cursor packs I downloaded elsewhere?</b></summary>
 
-Yes. Drag the `.zip`, the `install.inf` or the `.cur`/`.ani` files onto the window. Cursors copies them into its library and works out which cursor is which.
+Yes. Drag the `.zip`, the `install.inf` or the `.cur`/`.ani` files onto the window. Cursors copies them into its library and works out which cursor is which. You can also skip the download and [import straight from a link](#importing-from-a-link).
 </details>
 
 <details>
-<summary><b>Why isn't there a Figma or Minecraft pack?</b></summary>
+<summary><b>Is there a Minecraft pack?</b></summary>
 
-No cursor set in those styles could be found under a license that allows redistribution. The macOS and Pixel & Gaming categories are the closest openly licensed alternatives.
+Yes. **Community** has 23 Minecraft sets, from Minecraft - Diamond Edition down, plus RuneScape, Mario, Zelda, Sonic and Undertale sets. They aren't bundled, because game cursors aren't published under licenses that allow redistribution, so each one downloads from rw-designer.com when you click it. For a set from anywhere else, [import it from a link](#importing-from-a-link).
 </details>
 
 <details>
@@ -161,6 +194,16 @@ powershell -ExecutionPolicy Bypass -File tools\build-packs.ps1 -Sources D:\curso
 </details>
 
 <details>
+<summary><b>Refreshing the Community list</b></summary>
+
+```bash
+powershell -ExecutionPolicy Bypass -File tools\update-catalog.ps1
+```
+
+This rewrites `packs\catalog.tsv`. The script reads only rw-designer's public listing and set pages, which its `robots.txt` allows, at one request per second. It downloads no cursor files. Pages are cached for three days, so a stopped run resumes. `-Count` sets how many sets to list, and `-MinRoles` sets how many cursor roles a set needs.
+</details>
+
+<details>
 <summary><b>Project layout</b></summary>
 
 ```
@@ -170,6 +213,9 @@ src/                    the app (C#, WinForms, custom-drawn)
   CursorScheme.cs         applying schemes and detecting the active one
   PackLibrary.cs          Windows, bundled and added packs; import and install
   PackDetection.cs        install.inf parsing and file-name role detection
+  LinkImport.cs           importing a pack from a set page or file link
+  Catalog.cs              the Community list and its cached preview images
+  Shortcuts.cs            Start menu and desktop shortcuts
   CursorImage.cs          .cur/.ani decoder for previews
 packs/                  the bundled library, NOTICE.md and LICENSES/
 tools/                  pack recipe, source fetcher, library builder, PackTool, logo generator
@@ -196,3 +242,5 @@ Full attribution for each pack is in [`packs/NOTICE.md`](packs/NOTICE.md).
 The source code and documentation for Cursors are released under the [MIT License](LICENSE), © 2026 Rohan.
 
 The cursor packs in `packs/` are separate works, distributed under their own licenses: GPL-3.0, GPL-2.0, LGPL-3.0, CC BY-SA, Apache-2.0, MIT, X11 and CC0. See [`packs/NOTICE.md`](packs/NOTICE.md) and [`packs/LICENSES/`](packs/LICENSES).
+
+Community sets aren't part of this repository. `packs/catalog.tsv` only lists their names and links. Each set is hosted on rw-designer.com and licensed by its author, as shown on its page.
