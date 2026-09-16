@@ -2,11 +2,12 @@
 
 All notable changes to Cursors are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.2.0] - 2026-09-15
 
 ### Added
 
-- **More from the catalog script.** `tools/update-catalog.ps1` now lists every set that downloads as one file unless told otherwise (`-Count 500 -MinRoles 3` gives the shipped list), and records each set's cursor count, roles, animation and the site's top-rated mark.
+- **Every community set.** The Community section lists all 11,548 cursor sets on rw-designer.com that download as one file, up from the top 500: 142 Minecraft sets, 106 Mario, 71 RuneScape, 70 Pokémon and 57 Sonic among them.
+- **More from the catalog script.** `tools/update-catalog.ps1` lists every such set unless told otherwise (`-Count` and `-MinRoles` narrow it), and records each set's cursor count, roles, animation and the site's top-rated mark.
 - **Sidebar.** Browse All packs, Built-in, Community or My packs, or go straight to a built-in style, with a count beside each.
 - **Sort and filters.** Sort community sets by downloads, rating or name. Filter them to full sets, animated sets, top-rated sets or open licenses. The header shows how many sets match.
 

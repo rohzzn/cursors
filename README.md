@@ -6,7 +6,7 @@
 
 **One-click cursor packs for Windows**
 
-A small, native app with 60 built-in cursor styles and 500 popular community cursor sets. Click a card and your whole pointer scheme changes instantly.
+A small, native app with 60 built-in cursor styles and 11,548 community cursor sets. Click a card and your whole pointer scheme changes instantly.
 
 [![Latest release](https://img.shields.io/github/v/release/rohzzn/cursors?label=download&color=2b2b2b)](https://github.com/rohzzn/cursors/releases/latest)
 ![Windows 10 and 11](https://img.shields.io/badge/Windows-10%20%7C%2011-2b2b2b)
@@ -24,7 +24,7 @@ A small, native app with 60 built-in cursor styles and 500 popular community cur
 
 - **One click, the whole scheme.** Every card sets all 17 cursor types Windows defines: normal, link, text, busy, working, the four resizes, move, unavailable, precision, help, handwriting, alternate, location and person.
 - **60 packs out of the box.** Minimal, macOS-style, retro, pixel and gaming, neon, glass, cute and animated styles, each with credits and a license.
-- **500 community sets.** The most-downloaded complete sets from [rw-designer.com](https://www.rw-designer.com/cursor-library) are in the **Community** section, including 23 Minecraft sets and RuneScape, Mario, Zelda, Sonic and Undertale ones. Previews load as you scroll, and one click downloads and applies a set.
+- **11,548 community sets.** Every cursor set on [rw-designer.com](https://www.rw-designer.com/cursor-library) that downloads as one file is in the **Community** section: 142 Minecraft sets, 106 Mario, 71 RuneScape, 70 Pokémon, 57 Sonic and thousands more. Previews load as you scroll, and one click downloads and applies a set.
 - **Previews.** Large previews of every pack, with animated cursors playing and each pack's link, text and busy cursors fading in when you hover.
 - **Search.** Start typing to find a pack by name, style or author.
 - **Browse, sort and filter.** A sidebar takes you to all packs, the built-in ones, Community, your own packs or a single style. Community sets sort by downloads, rating or name, and filter to full sets, animated sets, top-rated sets or open licenses.
@@ -57,7 +57,7 @@ A small, native app with 60 built-in cursor styles and 500 popular community cur
   </tr>
 </table>
 
-<p align="center"><img src="docs/screenshot-community.png" alt="The Community section, showing popular cursor sets from rw-designer.com with a set's link, text and busy cursors on hover" width="880"><br><sub>500 community sets, with sort, filters and previews that load as you scroll</sub></p>
+<p align="center"><img src="docs/screenshot-community.png" alt="The Community section, showing popular cursor sets from rw-designer.com with a set's link, text and busy cursors on hover" width="880"><br><sub>11,548 community sets, with sort, filters and previews that load as you scroll</sub></p>
 
 ## The library
 
@@ -104,7 +104,7 @@ Packs with unclear licensing, such as Figma, Minecraft and other game or brand c
 
 ## Community sets
 
-The **Community** section lists the 500 most-downloaded cursor sets on [rw-designer.com](https://www.rw-designer.com/cursor-library) that work as a scheme: each downloads as one file, has a normal pointer and covers at least three cursor roles. Sets the site marks as adult content, and sets with explicit or hateful words in their names, are left out.
+The **Community** section lists the 11,548 cursor sets on [rw-designer.com](https://www.rw-designer.com/cursor-library) that download as one file, most downloaded first. Sets the site marks as adult content, and sets with explicit or hateful words in their names, are left out. Use **Filters → Full sets** for the ones that cover all 15 cursors.
 
 - **Nothing is bundled.** The app ships only the list, [`packs/catalog.tsv`](packs/catalog.tsv): names, authors, download counts, licenses and links.
 - **Previews load as you scroll.** Each card's preview image comes from rw-designer.com when the card scrolls into view, a couple at a time, and is cached in `%LOCALAPPDATA%\Cursors\Catalog`.
@@ -159,7 +159,7 @@ Yes. Drag the `.zip`, the `install.inf` or the `.cur`/`.ani` files onto the wind
 <details>
 <summary><b>Is there a Minecraft pack?</b></summary>
 
-Yes. **Community** has 23 Minecraft sets, from Minecraft - Diamond Edition down, plus RuneScape, Mario, Zelda, Sonic and Undertale sets. They aren't bundled, because game cursors aren't published under licenses that allow redistribution, so each one downloads from rw-designer.com when you click it. For a set from anywhere else, [import it from a link](#importing-from-a-link).
+Yes. **Community** has 142 Minecraft sets, from Minecraft - Diamond Edition down, plus RuneScape, Mario, Zelda, Sonic and Undertale sets. They aren't bundled, because game cursors aren't published under licenses that allow redistribution, so each one downloads from rw-designer.com when you click it. For a set from anywhere else, [import it from a link](#importing-from-a-link).
 </details>
 
 <details>
