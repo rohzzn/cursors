@@ -59,7 +59,8 @@ internal sealed class CursorPack
     private string _searchKey;
 
     /// <summary>Name, style and author in the form search compares against.</summary>
-    public string SearchKey => _searchKey ??= SearchText.Normalize(Label + " " + Category + " " + Author + " " + SchemeName);
+    public string SearchKey => _searchKey ??= SearchText.Normalize(
+        Label + " " + L.CategorySearchAliases(Category) + " " + Author + " " + SchemeName);
 
     /// <summary>Folder that holds the pack's files, when it has one of its own.</summary>
     public string Folder { get; set; }

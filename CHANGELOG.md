@@ -2,6 +2,23 @@
 
 All notable changes to Cursors are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+> <a href="CHANGELOG.md">English</a> · <a href="CHANGELOG.zh-CN.md">简体中文</a> — Simplified Chinese translation available.
+
+## [1.3.0] - 2026-11-14
+
+### Added
+
+- **Simplified Chinese.** The whole interface is translated, including the title bar, sidebar, menus, toasts, empty states, dialogs, file picker and import errors. Pack category ids stay in English internally, so switching languages never reshuffles the library.
+- **Language picker.** A globe button in the title bar offers Use system language (the default), 简体中文 or English. Switching is instant and needs no restart; the choice is saved in `settings.ini`. Chinese text uses Microsoft YaHei UI.
+- **Light and dark themes.** A complete light palette alongside the original dark one, with inverted selection, badge and primary-button states instead of a crude colour inversion.
+- **Follows Windows.** The sun/moon button offers Use system theme (the default), Light or Dark. In system mode the app reads `AppsUseLightTheme` and listens for `WM_SETTINGCHANGE` / `WM_THEMECHANGED`, so an already-open window changes skin the moment the Windows setting changes. `Ctrl`+`Shift`+`T` opens the menu.
+- **Native chrome follows along.** Popup menus, the DWM immersive frame, caption and border colours switch with the app instead of staying dark.
+- **使用说明.txt** in the release zip, with a short Chinese quick start.
+
+### Changed
+
+- `build.ps1` accepts a `CURSORS_CSC` environment variable pointing at a Roslyn `csc.exe`, so the release can be built and packaged on a machine without Visual Studio or the .NET SDK.
+
 ## [1.2.0] - 2026-09-15
 
 ### Added

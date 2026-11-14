@@ -143,6 +143,11 @@ internal sealed partial class MainWindow
                 return;
             }
 
+            case Native.WM_THEMECHANGED:
+                try { BeginInvoke((Action)RefreshSystemTheme); }
+                catch (InvalidOperationException) { }
+                break;
+
             case Native.WM_WINDOWPOSCHANGED:
                 _inWindowPosChanged = true;
                 try
@@ -155,8 +160,17 @@ internal sealed partial class MainWindow
                 }
                 return;
 
-            case Native.WM_SETTINGCHANGE when m.WParam.ToInt64() == Native.SPI_SETCURSORS:
-                BeginInvoke((Action)RefreshActiveFromSystem);
+            case Native.WM_SETTINGCHANGE:
+                if (m.WParam.ToInt64() == Native.SPI_SETCURSORS)
+                {
+                    BeginInvoke((Action)RefreshActiveFromSystem);
+                    break;
+                }
+                // Windows broadcasts ImmersiveColorSet when the app light/dark setting changes. Other
+                // broadcasts carry pointers we don't own, so just re-read the registry: it's one cheap
+                // lookup and RefreshSystemTheme ignores it unless the palette really changed.
+                try { BeginInvoke((Action)RefreshSystemTheme); }
+                catch (InvalidOperationException) { } // window went away before the message was dispatched
                 break;
         }
         base.WndProc(ref m);
@@ -184,7 +198,8 @@ internal sealed partial class MainWindow
 
         foreach (int ht in new[] { Native.HTCLOSE, Native.HTMAXBUTTON, Native.HTMINBUTTON })
             if (CaptionButtonRect(ht).Contains(pt)) return ht;
-        if (RestoreButtonRect().Contains(pt) || SearchRect().Contains(pt)) return Native.HTCLIENT;
+        if (RestoreButtonRect().Contains(pt) || LanguageButtonRect().Contains(pt) ||
+            ThemeButtonRect().Contains(pt) || SearchRect().Contains(pt)) return Native.HTCLIENT;
         return Native.HTCAPTION;
     }
 
@@ -228,6 +243,20 @@ internal sealed partial class MainWindow
         {
             busy = true;
             var r = RestoreButtonRect();
+            r.Inflate(2, 2);
+            Invalidate(r);
+        }
+        if (_languageHover.Step(dt, 45) | _languagePress.Step(dt, 28))
+        {
+            busy = true;
+            var r = LanguageButtonRect();
+            r.Inflate(2, 2);
+            Invalidate(r);
+        }
+        if (_themeHover.Step(dt, 45) | _themePress.Step(dt, 28))
+        {
+            busy = true;
+            var r = ThemeButtonRect();
             r.Inflate(2, 2);
             Invalidate(r);
         }

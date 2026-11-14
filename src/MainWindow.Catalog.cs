@@ -180,12 +180,12 @@ internal sealed partial class MainWindow
         var entry = card.Pack;
         if (!_catalogDownloading.Add(entry.Id))
         {
-            ShowToast($"Still downloading “{entry.Label}”");
+            ShowToast(L.F(L.S.ToastStillDownloading, entry.Label));
             return;
         }
         InvalidateCard(card);
         StartAnimation();
-        ShowToast($"Downloading “{entry.Label}”…");
+        ShowToast(L.F(L.S.ToastDownloadingPack, entry.Label));
         ThreadPool.QueueUserWorkItem(_ =>
         {
             var result = LinkImport.Import(entry.Url, entry.Author);
@@ -199,13 +199,13 @@ internal sealed partial class MainWindow
         if (_cardByPack.TryGetValue(entry, out var card)) InvalidateCard(card);
         if (result.Error != null)
         {
-            ShowToast(result.Error == "That link wasn't found" ? $"“{entry.Label}” is no longer available" : result.Error);
+            ShowToast(result.ErrorId == ImportError.LinkNotFound ? L.F(L.S.ToastUnavailable, entry.Label) : result.Error);
             return;
         }
         string id = result.Import.AddedIds.FirstOrDefault() ?? result.Import.ExistingIds.FirstOrDefault();
         if (id == null)
         {
-            ShowToast($"No cursors found in “{entry.Label}”");
+            ShowToast(L.F(L.S.ToastNoCursorsIn, entry.Label));
             return;
         }
 
@@ -214,7 +214,7 @@ internal sealed partial class MainWindow
         if (pack == null) return;
         SetSelected(pack.Id);
         _applier.Request(pack, _library.WindowsDefault);
-        ShowToast(pack.License != null ? $"Applied “{pack.Label}” · {pack.License}" : $"Applied “{pack.Label}”");
+        ShowToast(pack.License != null ? L.F(L.S.ToastAppliedLicense, pack.Label, pack.License) : L.F(L.S.ToastApplied, pack.Label));
     }
 
     /// <summary>Keeps the spinner turning on cards whose set is downloading.</summary>
@@ -237,7 +237,7 @@ internal sealed partial class MainWindow
         if (pack.Preview == null && pack.CatalogPreviews?[0] is string id && _catalogFailed.Contains(id))
         {
             var area = Rectangle.Round(new RectangleF(r.X + 12 * s, r.Y + 6 * s, r.Width - 24 * s, areaH));
-            TextRenderer.DrawText(g, "No preview", _fonts.Label, area, Theme.TextInactive, CenteredText);
+            TextRenderer.DrawText(g, L.S.NoPreview, _fonts.Label, area, Theme.TextInactive, CenteredText);
         }
 
         bool downloading = _catalogDownloading.Contains(pack.Id);
@@ -248,7 +248,7 @@ internal sealed partial class MainWindow
         if (downloading)
         {
             var circle = new RectangleF(cx - d / 2, cy - d / 2, d, d);
-            using var track = new Pen(Color.FromArgb(46, 255, 255, 255), 1.6f * s);
+            using var track = new Pen(Theme.CatalogTrack, 1.6f * s);
             using var arc = new Pen(Theme.Text, 1.6f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round };
             g.DrawEllipse(track, circle);
             g.DrawArc(arc, circle, now % 900 / 900f * 360, 110);

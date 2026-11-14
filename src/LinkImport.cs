@@ -12,6 +12,7 @@ internal sealed class LinkImportResult
 {
     public ImportResult Import;
     public string Error;
+    public ImportError ErrorId;
     public string License;
 }
 
@@ -42,17 +43,17 @@ internal static class LinkImport
 
     public static LinkImportResult Import(string link, string author = null)
     {
-        if (!LooksLikeLink(link)) return Fail("That isn't a web link");
+        if (!LooksLikeLink(link)) return Fail(ImportError.NotALink);
         var page = new Uri(link.Trim());
         string temp = Path.Combine(Path.GetTempPath(), "Cursors-link-" + Guid.NewGuid().ToString("N"));
         try
         {
             var details = new ImportDetails { Url = page.AbsoluteUri, Author = author ?? SiteName(page) };
-            var file = ResolveDownload(page, details, out string error);
+            var file = ResolveDownload(page, details, out ImportError error);
             if (file == null) return Fail(error);
 
             string name = SafeFileName(Uri.UnescapeDataString(Path.GetFileName(file.AbsolutePath)));
-            if (!IsCursorDownload(name)) return Fail("That link doesn't lead to a .zip, .cur or .ani file");
+            if (!IsCursorDownload(name)) return Fail(ImportError.NotCursorFile);
             Directory.CreateDirectory(temp);
             string path = Path.Combine(temp, name);
             Download(file, path);
@@ -60,15 +61,15 @@ internal static class LinkImport
         }
         catch (WebException ex)
         {
-            return Fail(Describe(ex));
+            return Describe(ex);
         }
-        catch (InvalidDataException ex)
+        catch (InvalidDataException)
         {
-            return Fail(ex.Message);
+            return Fail(ImportError.TooLarge);
         }
         catch (Exception)
         {
-            return Fail("Couldn't import that link");
+            return Fail(ImportError.ImportFailed);
         }
         finally
         {
@@ -80,7 +81,8 @@ internal static class LinkImport
         }
     }
 
-    private static LinkImportResult Fail(string error) => new() { Error = error };
+    private static LinkImportResult Fail(ImportError id, params object[] args) =>
+        new() { ErrorId = id, Error = L.ImportMessage(id, args) };
 
     private static bool IsCursorDownload(string fileName)
     {
@@ -88,9 +90,9 @@ internal static class LinkImport
         return ext == ".zip" || ext == ".cur" || ext == ".ani";
     }
 
-    private static Uri ResolveDownload(Uri page, ImportDetails details, out string error)
+    private static Uri ResolveDownload(Uri page, ImportDetails details, out ImportError error)
     {
-        error = null;
+        error = ImportError.None;
         if (IsCursorDownload(page.AbsolutePath)) return page;
 
         string html = GetPage(page);
@@ -99,7 +101,7 @@ internal static class LinkImport
         details.RoleFiles = PageRoles(html);
         // A set page offers the whole set as one zip; a single cursor's page links just that cursor.
         var link = FindLink(html, page, "/cursor-downloadset/", ".zip") ?? FindLink(html, page, "/cursor-download/", ".cur", ".ani");
-        if (link == null) error = "No cursor download was found on that page";
+        if (link == null) error = ImportError.NoDownloadOnPage;
         return link;
     }
 
@@ -199,7 +201,7 @@ internal static class LinkImport
     private static void Download(Uri uri, string path)
     {
         using var response = (HttpWebResponse)Request(uri).GetResponse();
-        if (response.ContentLength > MaxDownloadBytes) throw new InvalidDataException("That download is too large for a cursor set");
+        if (response.ContentLength > MaxDownloadBytes) throw new InvalidDataException(L.ImportMessage(ImportError.TooLarge));
         using var stream = response.GetResponseStream();
         using var file = File.Create(path);
         Copy(stream, file, MaxDownloadBytes);
@@ -213,21 +215,25 @@ internal static class LinkImport
         while ((read = from.Read(buffer, 0, buffer.Length)) > 0)
         {
             total += read;
-            if (total > limit) throw new InvalidDataException("That download is too large for a cursor set");
+            if (total > limit) throw new InvalidDataException(L.ImportMessage(ImportError.TooLarge));
             to.Write(buffer, 0, read);
         }
     }
 
-    private static string Describe(WebException ex)
+    private static LinkImportResult Describe(WebException ex)
     {
         if (ex.Response is HttpWebResponse http)
-            return http.StatusCode == HttpStatusCode.NotFound ? "That link wasn't found" : $"The site answered {(int)http.StatusCode} {http.StatusDescription}";
-        return ex.Status switch
         {
-            WebExceptionStatus.Timeout => "The download timed out",
-            WebExceptionStatus.NameResolutionFailure or WebExceptionStatus.ConnectFailure => "Couldn't connect. Check your internet connection",
-            WebExceptionStatus.TrustFailure or WebExceptionStatus.SecureChannelFailure => "Couldn't make a secure connection to that site",
-            _ => "The download failed",
+            if (http.StatusCode == HttpStatusCode.NotFound) return Fail(ImportError.LinkNotFound);
+            return Fail(ImportError.HttpStatus, (int)http.StatusCode, http.StatusDescription);
+        }
+        ImportError id = ex.Status switch
+        {
+            WebExceptionStatus.Timeout => ImportError.Timeout,
+            WebExceptionStatus.NameResolutionFailure or WebExceptionStatus.ConnectFailure => ImportError.NoConnection,
+            WebExceptionStatus.TrustFailure or WebExceptionStatus.SecureChannelFailure => ImportError.SecureConnection,
+            _ => ImportError.DownloadFailed,
         };
+        return Fail(id);
     }
 }

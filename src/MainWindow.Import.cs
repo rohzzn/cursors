@@ -23,8 +23,8 @@ internal sealed partial class MainWindow
         IntPtr menu = Native.CreatePopupMenu();
         try
         {
-            Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)1, "From files…\tCtrl+O");
-            Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)2, "From a link…\tCtrl+L");
+            Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)1, L.S.AddFromFiles);
+            Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)2, L.S.AddFromLink);
             Native.SetForegroundWindow(Handle);
             int command = Native.TrackPopupMenuEx(menu, Native.TPM_RETURNCMD | Native.TPM_RIGHTBUTTON, point.X, point.Y, Handle, IntPtr.Zero);
             if (command == 1) BrowseForPacks();
@@ -77,11 +77,11 @@ internal sealed partial class MainWindow
     {
         if (_linkImportBusy)
         {
-            ShowToast("Still importing the last link");
+            ShowToast(L.S.ToastStillLink);
             return;
         }
         _linkImportBusy = true;
-        ShowToast("Downloading cursors…");
+        ShowToast(L.S.ToastDownloading);
         ThreadPool.QueueUserWorkItem(_ =>
         {
             var result = LinkImport.Import(link);
@@ -98,7 +98,7 @@ internal sealed partial class MainWindow
                     OnImported(result.Import);
                     if (result.Import.AddedIds.Count == 1 && result.License != null &&
                         _allCards.FirstOrDefault(c => c.Pack?.Id == result.Import.AddedIds[0])?.Pack is CursorPack pack)
-                        ShowToast($"Added “{pack.Label}” · {result.License}");
+                        ShowToast(L.F(L.S.ToastAddedLicense, pack.Label, result.License));
                 }));
             }
             catch (InvalidOperationException) { }
@@ -117,7 +117,7 @@ internal sealed class LinkDialog : Form
     public LinkDialog(UiFonts fonts, float s, string link)
     {
         int Px(float v) => (int)Math.Round(v * s);
-        Text = "Add from a link";
+        Text = L.S.LinkDialogTitle;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = MinimizeBox = false;
         ShowInTaskbar = false;
@@ -131,15 +131,15 @@ internal sealed class LinkDialog : Form
 
         Controls.Add(new Label
         {
-            Text = "Paste a link to a cursor set page (for example on rw-designer.com), or to a .zip, .cur or .ani file.",
+            Text = L.S.LinkDialogHint,
             ForeColor = Theme.TextSecondary,
             Bounds = new Rectangle(Px(20), Px(16), Px(420), Px(40)),
         });
 
-        var frame = new Panel { BackColor = Theme.Rgb(0x262626), Bounds = new Rectangle(Px(20), Px(62), Px(420), Px(36)) };
+        var frame = new Panel { BackColor = Theme.InputFill, Bounds = new Rectangle(Px(20), Px(62), Px(420), Px(36)) };
         frame.Paint += (_, e) =>
         {
-            using var pen = new Pen(_box.Focused ? Color.FromArgb(0x6A, 0x6A, 0x6A) : Color.FromArgb(0x38, 0x38, 0x38));
+            using var pen = new Pen(_box.Focused ? Theme.InputBorderFocus : Theme.InputBorder);
             e.Graphics.DrawRectangle(pen, 0, 0, frame.Width - 1, frame.Height - 1);
         };
         _box = new TextBox
@@ -155,9 +155,9 @@ internal sealed class LinkDialog : Form
         frame.Controls.Add(_box);
         Controls.Add(frame);
 
-        _import = MakeButton("Import", primary: true, new Rectangle(Px(340), Px(116), Px(100), Px(32)));
+        _import = MakeButton(L.S.LinkImport, primary: true, new Rectangle(Px(340), Px(116), Px(100), Px(32)));
         _import.DialogResult = DialogResult.OK;
-        var cancel = MakeButton("Cancel", primary: false, new Rectangle(Px(230), Px(116), Px(100), Px(32)));
+        var cancel = MakeButton(L.S.LinkCancel, primary: false, new Rectangle(Px(230), Px(116), Px(100), Px(32)));
         cancel.DialogResult = DialogResult.Cancel;
         Controls.Add(_import);
         Controls.Add(cancel);
@@ -176,7 +176,7 @@ internal sealed class LinkDialog : Form
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        Native.ApplyDarkFrame(Handle, Native.ToColorRef(Theme.FrameBorder));
+        Native.ApplyFrame(Handle, Theme.IsDark, Native.ToColorRef(Theme.FrameBorder), Native.ToColorRef(Theme.Background));
     }
 
     private static Button MakeButton(string text, bool primary, Rectangle bounds)
@@ -186,19 +186,19 @@ internal sealed class LinkDialog : Form
             Text = text,
             Bounds = bounds,
             FlatStyle = FlatStyle.Flat,
-            BackColor = primary ? Theme.ChipSelected : Theme.Rgb(0x2D2D2D),
+            BackColor = primary ? Theme.ChipSelected : Theme.SecondaryButtonFill,
             ForeColor = primary ? Theme.ChipSelectedText : Theme.Text,
             UseVisualStyleBackColor = false,
         };
-        button.FlatAppearance.BorderColor = primary ? Theme.ChipSelected : Theme.Rgb(0x3A3A3A);
-        button.FlatAppearance.MouseOverBackColor = primary ? Theme.Rgb(0xF2F2F2) : Theme.Rgb(0x353535);
-        button.FlatAppearance.MouseDownBackColor = primary ? Theme.Rgb(0xD6D6D6) : Theme.Rgb(0x2A2A2A);
+        button.FlatAppearance.BorderColor = primary ? Theme.ChipSelected : Theme.SecondaryButtonBorder;
+        button.FlatAppearance.MouseOverBackColor = primary ? Theme.PrimaryButtonHover : Theme.SecondaryButtonHover;
+        button.FlatAppearance.MouseDownBackColor = primary ? Theme.PrimaryButtonPressed : Theme.SecondaryButtonPressed;
         button.EnabledChanged += (_, _) =>
         {
             // Flat buttons keep their colors when disabled, so a disabled Import would still look clickable.
             bool bright = primary && button.Enabled;
-            button.BackColor = bright ? Theme.ChipSelected : Theme.Rgb(0x2D2D2D);
-            button.FlatAppearance.BorderColor = bright ? Theme.ChipSelected : Theme.Rgb(0x3A3A3A);
+            button.BackColor = bright ? Theme.ChipSelected : Theme.SecondaryButtonFill;
+            button.FlatAppearance.BorderColor = bright ? Theme.ChipSelected : Theme.SecondaryButtonBorder;
             button.ForeColor = button.Enabled ? (primary ? Theme.ChipSelectedText : Theme.Text) : Theme.TextInactive;
         };
         return button;

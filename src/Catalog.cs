@@ -81,8 +81,7 @@ internal static class CommunityCatalog
         return packs;
     }
 
-    public static string FormatDownloads(int downloads) =>
-        downloads.ToString("N0", CultureInfo.CurrentCulture) + (downloads == 1 ? " download" : " downloads");
+    public static string FormatDownloads(int downloads) => L.Downloads(downloads);
 
     /// <summary>Public domain and attribution-only licenses, which let anyone share and reuse a set.</summary>
     public static bool IsOpenLicense(string license) =>

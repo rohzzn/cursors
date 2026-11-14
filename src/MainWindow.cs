@@ -74,7 +74,11 @@ internal sealed partial class MainWindow : Form
 
     public MainWindow()
     {
-        Text = "Cursors";
+        _settings = IniFile.Read(AppPaths.SettingsFile);
+        L.Load(_settings.TryGetValue("language", out string storedLanguage) ? storedLanguage : null);
+        Theme.Load(_settings.TryGetValue("theme", out string storedTheme) ? storedTheme : null);
+
+        Text = L.S.AppTitle;
         FormBorderStyle = FormBorderStyle.Sizable;
         StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.None;
@@ -91,9 +95,8 @@ internal sealed partial class MainWindow : Form
         catch { }
 
         _dpi = DeviceDpi > 0 ? DeviceDpi : 96;
-        _fonts = new UiFonts(S);
+        _fonts = new UiFonts(S, L.IsChinese);
         InitSearch();
-        _settings = IniFile.Read(AppPaths.SettingsFile);
         LoadBrowseSettings();
         _timer.Tick += (_, _) => OnTick();
         _applier.Completed += OnApplyCompleted;
@@ -116,7 +119,7 @@ internal sealed partial class MainWindow : Form
         catch (EntryPointNotFoundException) { }
 
         MinimumSize = new Size((int)(720 * S), (int)(520 * S));
-        Native.ApplyDarkFrame(Handle, Native.ToColorRef(Theme.FrameBorder));
+        Native.ApplyFrame(Handle, Theme.IsDark, Native.ToColorRef(Theme.FrameBorder), Native.ToColorRef(Theme.Background));
         Native.SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0,
             Native.SWP_FRAMECHANGED | Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOZORDER | Native.SWP_NOACTIVATE);
         StartPreviewLoad();
@@ -198,7 +201,7 @@ internal sealed partial class MainWindow : Form
     {
         _dpi = dpi;
         var oldFonts = _fonts;
-        _fonts = new UiFonts(S);
+        _fonts = new UiFonts(S, L.IsChinese);
         if (_search != null) _search.Font = _fonts.Label;
         oldFonts.Dispose();
         _restoreTextWidth = -1;
@@ -325,7 +328,7 @@ internal sealed partial class MainWindow : Form
                     if (!_cards[k].IsAdd) count++;
                 _sections.Add(new Section
                 {
-                    Title = _cards[start].Category == PackLibrary.AddedCategory ? "My packs" : _cards[start].Category,
+                    Title = _cards[start].Category == PackLibrary.AddedCategory ? L.S.NavMine : L.Category(_cards[start].Category),
                     Count = count,
                     Bounds = new RectangleF(left, y, used, SectionHeaderHeight * s),
                 });
@@ -496,7 +499,7 @@ internal sealed partial class MainWindow : Form
         var pack = _library.WindowsDefault;
         SetSelected(pack.Id);
         _applier.Request(pack, pack);
-        ShowToast("Windows default cursors restored");
+        ShowToast(L.S.ToastRestored);
     }
 
     private void SetSelected(string id)
@@ -516,7 +519,7 @@ internal sealed partial class MainWindow : Form
         if (error == null || IsDisposed) return;
         try
         {
-            BeginInvoke((Action)(() => ShowToast($"Couldn't apply “{pack.Label}”")));
+            BeginInvoke((Action)(() => ShowToast(L.F(L.S.ToastApplyFail, pack.Label))));
         }
         catch (InvalidOperationException) { }
     }
@@ -533,8 +536,8 @@ internal sealed partial class MainWindow : Form
     {
         using var dialog = new OpenFileDialog
         {
-            Title = "Add cursor packs",
-            Filter = "Cursor packs (*.zip, *.inf, *.cur, *.ani)|*.zip;*.inf;*.cur;*.ani|All files (*.*)|*.*",
+            Title = L.S.AddDialogTitle,
+            Filter = L.S.AddDialogFilter,
             Multiselect = true,
             RestoreDirectory = true,
         };
@@ -566,7 +569,7 @@ internal sealed partial class MainWindow : Form
     {
         if (result.AddedIds.Count == 0 && result.ExistingIds.Count == 0)
         {
-            ShowToast("No cursor files found");
+            ShowToast(L.S.ToastNoCursorFiles);
             return;
         }
         ReloadLibrary(result.AddedIds);
@@ -575,9 +578,9 @@ internal sealed partial class MainWindow : Form
         int index = _cards.FindIndex(c => c.Pack?.Id == focusId);
         if (index >= 0) ScrollIntoView(index);
 
-        if (result.AddedIds.Count == 0) ShowToast("Already in your library");
-        else if (result.AddedIds.Count == 1 && index >= 0) ShowToast($"Added “{_cards[index].Pack.Label}”");
-        else ShowToast($"Added {result.AddedIds.Count} cursor packs");
+        if (result.AddedIds.Count == 0) ShowToast(L.S.ToastAlready);
+        else if (result.AddedIds.Count == 1 && index >= 0) ShowToast(L.F(L.S.ToastAdded, _cards[index].Pack.Label));
+        else ShowToast(L.F(L.S.ToastAddedMany, result.AddedIds.Count));
     }
 
     private void ShowContextMenu(Card card, Point screen)
@@ -593,14 +596,14 @@ internal sealed partial class MainWindow : Form
         try
         {
             bool remote = pack.Kind == PackKind.Catalog;
-            Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)1, remote ? "Download and apply" : "Apply");
+            Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)1, remote ? L.S.CtxDownloadApply : L.S.CtxApply);
             Native.AppendMenu(menu, Native.MF_SEPARATOR, UIntPtr.Zero, null);
-            if (hasUrl) Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)4, pack.Category == CommunityCatalog.Category ? "Visit set page" : "Visit project page");
-            if (!remote) Native.AppendMenu(menu, Native.MF_STRING | (hasFolder ? 0 : Native.MF_GRAYED), (UIntPtr)2, "Open folder");
+            if (hasUrl) Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)4, pack.Category == CommunityCatalog.Category ? L.S.CtxVisitSet : L.S.CtxVisitProject);
+            if (!remote) Native.AppendMenu(menu, Native.MF_STRING | (hasFolder ? 0 : Native.MF_GRAYED), (UIntPtr)2, L.S.CtxOpenFolder);
             if (pack.Kind == PackKind.Library)
             {
                 Native.AppendMenu(menu, Native.MF_SEPARATOR, UIntPtr.Zero, null);
-                Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)3, "Remove from library");
+                Native.AppendMenu(menu, Native.MF_STRING, (UIntPtr)3, L.S.CtxRemove);
             }
             if (credit.Length > 0)
             {
@@ -651,11 +654,11 @@ internal sealed partial class MainWindow : Form
         }
         catch (Exception)
         {
-            ShowToast($"Couldn't remove “{pack.Label}”");
+            ShowToast(L.F(L.S.ToastRemoveFail, pack.Label));
             return;
         }
         ReloadLibrary();
-        ShowToast($"Removed “{pack.Label}”");
+        ShowToast(L.F(L.S.ToastRemoved, pack.Label));
     }
 
     private void ScrollIntoView(int index)
