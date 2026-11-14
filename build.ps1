@@ -12,6 +12,9 @@ $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 
 function Find-Csc {
+    # On a machine without Visual Studio or the .NET SDK, point this at any Roslyn csc.exe
+    # (for example the one extracted from the Microsoft.Net.Compilers.Toolset NuGet package).
+    if ($env:CURSORS_CSC -and (Test-Path $env:CURSORS_CSC)) { return $env:CURSORS_CSC }
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
     if (Test-Path $vswhere) {
         $found = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Roslyn\csc.exe' | Select-Object -First 1
@@ -39,8 +42,9 @@ $refs = 'mscorlib', 'System', 'System.Core', 'System.Drawing', 'System.Windows.F
         ForEach-Object { "/r:$fw\$_.dll" }
 $sources = Get-ChildItem (Join-Path $root 'src') -Filter *.cs | ForEach-Object FullName
 
+# 65001 keeps the translated strings in src\*.cs as UTF-8 regardless of the system ANSI code page.
 & $csc /nologo /noconfig /nostdlib+ /target:winexe /platform:anycpu /optimize+ /debug- /deterministic+ `
-    /langversion:latest /warn:4 /nowarn:1591 `
+    /langversion:latest /warn:4 /nowarn:1591 /codepage:65001 `
     "/out:$out\Cursors.exe" "/win32manifest:$root\app.manifest" "/win32icon:$icon" `
     @refs @sources
 if ($LASTEXITCODE -ne 0) { throw "Build failed ($LASTEXITCODE)" }
@@ -72,6 +76,8 @@ if ($Package) {
     foreach ($doc in 'LICENSE', 'README.md', 'CHANGELOG.md') {
         if (Test-Path (Join-Path $root $doc)) { Copy-Item (Join-Path $root $doc) $stage }
     }
+    # Root-level .txt notes (the Chinese quick start). A glob keeps this script pure ASCII.
+    Get-ChildItem $root -Filter *.txt -File | ForEach-Object { Copy-Item $_.FullName $stage }
 
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $zip = Join-Path $dist "$name-windows.zip"

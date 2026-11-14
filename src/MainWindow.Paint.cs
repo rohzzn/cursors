@@ -10,7 +10,7 @@ namespace Cursors;
 
 internal sealed partial class MainWindow
 {
-    private const string RestoreLabel = "Restore default";
+    private static string RestoreLabel => L.S.Restore;
     private const TextFormatFlags CenteredText = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
         TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding |
         TextFormatFlags.PreserveGraphicsClipping;
@@ -190,7 +190,7 @@ internal sealed partial class MainWindow
         float s = S;
         var ring = RectangleF.Inflate(r, 3 * s, 3 * s);
         using var path = Theme.RoundedRect(ring, CardRadius * s + 3 * s);
-        using var pen = new Pen(Color.FromArgb(220, 255, 255, 255), 2 * s);
+        using var pen = new Pen(Theme.FocusRing, 2 * s);
         g.DrawPath(pen, path);
     }
 
@@ -201,11 +201,11 @@ internal sealed partial class MainWindow
         g.PixelOffsetMode = PixelOffsetMode.None;
 
         using (var path = Theme.RoundedRect(r, CardRadius * s))
-        using (var brush = new SolidBrush(Color.FromArgb(Math.Max(0, (int)(10 * hover - 4 * press)), 255, 255, 255)))
+        using (var brush = new SolidBrush(Theme.Fade(Theme.Overlay, Math.Max(0, 10 * hover - 4 * press) / 255f)))
             g.FillPath(brush, path);
 
         using (var path = Theme.RoundedRect(RectangleF.Inflate(r, -0.5f * s, -0.5f * s), CardRadius * s))
-        using (var pen = new Pen(Color.FromArgb((int)(34 + 30 * hover), 255, 255, 255), Math.Max(1f, (float)Math.Round(s))) { DashPattern = new[] { 4f, 3f } })
+        using (var pen = new Pen(Theme.Fade(Theme.Overlay, (34 + 30 * hover) / 255f), Math.Max(1f, (float)Math.Round(s))) { DashPattern = new[] { 4f, 3f } })
             g.DrawPath(pen, path);
 
         if (_keyboardFocus && index == _focusIndex && ContainsFocus) DrawFocusRing(g, r);
@@ -221,7 +221,7 @@ internal sealed partial class MainWindow
         }
 
         var labelRect = Rectangle.Round(new RectangleF(r.X + 12 * s, r.Bottom - bottomPad - labelHeight, r.Width - 24 * s, labelHeight));
-        TextRenderer.DrawText(g, "Add pack", _fonts.Label, labelRect, color, CenteredText);
+        TextRenderer.DrawText(g, L.S.AddCard, _fonts.Label, labelRect, color, CenteredText);
     }
 
     private void DrawSection(Graphics g, Section section, Rectangle clip)
@@ -250,7 +250,7 @@ internal sealed partial class MainWindow
         using (var bg = new SolidBrush(Theme.Background)) g.FillRectangle(bg, 0, 0, ClientSize.Width, barH);
 
         var titleColor = _windowActive ? Theme.Text : Theme.TextInactive;
-        TextRenderer.DrawText(g, "Cursors", _fonts.Title,
+        TextRenderer.DrawText(g, L.S.AppTitle, _fonts.Title,
             new Rectangle((int)Math.Round(PadX * s), 0, (int)(240 * s), barH), titleColor,
             TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix);
 
@@ -265,6 +265,8 @@ internal sealed partial class MainWindow
             g.DrawPath(pen, path);
         var btnText = Theme.Lerp(_windowActive ? Theme.Text : Theme.TextSecondary, Theme.TextSecondary, rp * 0.6f);
         TextRenderer.DrawText(g, RestoreLabel, _fonts.Button, rb, btnText, CenteredText & ~TextFormatFlags.PreserveGraphicsClipping);
+        DrawThemeButton(g);
+        DrawLanguageButton(g);
         DrawSearchBox(g);
 
         DrawCaptionButton(g, Native.HTMINBUTTON, "\uE921", _minHover.Value, false);
@@ -323,10 +325,10 @@ internal sealed partial class MainWindow
         g.SmoothingMode = SmoothingMode.AntiAlias;
         using (var path = Theme.RoundedRect(area, 14 * s))
         {
-            using (var brush = new SolidBrush(Color.FromArgb((int)(200 * t), 22, 22, 22))) g.FillPath(brush, path);
-            using (var pen = new Pen(Color.FromArgb((int)(110 * t), 255, 255, 255), 1.5f * s) { DashPattern = new[] { 5f, 4f } }) g.DrawPath(pen, path);
+            using (var brush = new SolidBrush(Theme.Fade(Theme.DropVeil, 200f * t / 255f))) g.FillPath(brush, path);
+            using (var pen = new Pen(Theme.Fade(Theme.Overlay, 110f * t / 255f), 1.5f * s) { DashPattern = new[] { 5f, 4f } }) g.DrawPath(pen, path);
         }
-        DrawAlphaText(g, "Drop to add cursor packs", _fonts.Title, area, Theme.Fade(Theme.Text, t));
+        DrawAlphaText(g, L.S.DropOverlay, _fonts.Title, area, Theme.Fade(Theme.Text, t));
     }
 
     private Rectangle ToastRect()
@@ -346,7 +348,7 @@ internal sealed partial class MainWindow
         using (var path = Theme.RoundedRect(r, r.Height / 2))
         {
             using (var brush = new SolidBrush(Theme.Fade(Theme.Toast, t))) g.FillPath(brush, path);
-            using (var pen = new Pen(Theme.Fade(Theme.ButtonBorder, t), 1f)) g.DrawPath(pen, path);
+            using (var pen = new Pen(Theme.Fade(Theme.ToastBorder, t), 1f)) g.DrawPath(pen, path);
         }
         DrawAlphaText(g, _toastText, _fonts.Label, r, Theme.Fade(Theme.Text, t));
     }

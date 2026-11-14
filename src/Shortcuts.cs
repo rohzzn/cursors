@@ -93,7 +93,7 @@ internal static class Shortcuts
         {
             link.SetPath(exe);
             link.SetWorkingDirectory(Path.GetDirectoryName(exe));
-            link.SetDescription("One-click cursor packs for Windows");
+            link.SetDescription(L.S.ShortcutDescription);
             link.SetIconLocation(exe, 0);
             Directory.CreateDirectory(Path.GetDirectoryName(shortcut));
             ((System.Runtime.InteropServices.ComTypes.IPersistFile)link).Save(shortcut, true);

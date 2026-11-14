@@ -12,7 +12,7 @@ internal sealed partial class MainWindow
 {
     private const float SearchMaxWidth = 240, SearchMinWidth = 120, SearchHeight = 32;
     private const int EM_SETCUEBANNER = 0x1501;
-    private static readonly Color SearchFill = Theme.Rgb(0x262626);
+    private static Color SearchFill => Theme.SearchFill;
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr SendMessage(IntPtr hwnd, int msg, IntPtr wParam, string lParam);
@@ -34,7 +34,7 @@ internal sealed partial class MainWindow
             Font = _fonts.Label,
             TabStop = false,
         };
-        _search.HandleCreated += (_, _) => SendMessage(_search.Handle, EM_SETCUEBANNER, (IntPtr)1, "Search packs");
+        _search.HandleCreated += (_, _) => RefreshSearchCue();
         _search.TextChanged += (_, _) => OnSearchChanged();
         _search.GotFocus += (_, _) =>
         {
@@ -51,10 +51,17 @@ internal sealed partial class MainWindow
         Controls.Add(_search);
     }
 
+    /// <summary>The native cue banner needs re-sending whenever the language changes.</summary>
+    private void RefreshSearchCue()
+    {
+        if (_search != null && _search.IsHandleCreated)
+            SendMessage(_search.Handle, EM_SETCUEBANNER, (IntPtr)1, L.S.SearchCue);
+    }
+
     private int TitleTextWidth()
     {
         if (_titleTextWidth < 0)
-            _titleTextWidth = TextRenderer.MeasureText("Cursors", _fonts.Title, Size.Empty, TextFormatFlags.NoPadding).Width;
+            _titleTextWidth = TextRenderer.MeasureText(L.S.AppTitle, _fonts.Title, Size.Empty, TextFormatFlags.NoPadding).Width;
         return _titleTextWidth;
     }
 
@@ -64,7 +71,7 @@ internal sealed partial class MainWindow
         float s = S;
         int h = (int)Math.Round(SearchHeight * s);
         int left = (int)Math.Round(PadX * s) + TitleTextWidth() + (int)Math.Round(20 * s);
-        int right = RestoreButtonRect().X - (int)Math.Round(8 * s);
+        int right = ThemeButtonRect().X - (int)Math.Round(8 * s);
         int w = Math.Min((int)Math.Round(SearchMaxWidth * s), right - left);
         return w < SearchMinWidth * s ? Rectangle.Empty : new Rectangle(right - w, (TitleBarPx - h) / 2, w, h);
     }
@@ -98,7 +105,7 @@ internal sealed partial class MainWindow
         using (var brush = new SolidBrush(SearchFill))
             g.FillPath(brush, path);
         using (var path = Theme.RoundedRect(new RectangleF(r.X + 0.5f, r.Y + 0.5f, r.Width - 1, r.Height - 1), 6 * s))
-        using (var pen = new Pen(Theme.Lerp(Theme.ButtonBorder, Color.FromArgb(80, 255, 255, 255), focus), 1f))
+        using (var pen = new Pen(Theme.Lerp(Theme.ButtonBorder, Theme.FocusBorder, focus), 1f))
             g.DrawPath(pen, path);
 
         const TextFormatFlags glyph = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
@@ -180,6 +187,7 @@ internal sealed partial class MainWindow
             case Keys.Control | Keys.Tab:
             case Keys.Control | Keys.Shift | Keys.Tab:
             case Keys.Control | Keys.O:
+            case Keys.Control | Keys.Shift | Keys.T:
             case Keys.F5:
                 return false;
             default:
@@ -208,14 +216,14 @@ internal sealed partial class MainWindow
         var title = new Rectangle(left, ViewportTopPx + (int)Math.Round(70 * s),
             ClientSize.Width - left - (int)Math.Round(PadX * s), (int)Math.Round(28 * s));
         bool filtered = ActiveFilterCount > 0 && ViewHasCommunity;
-        string heading = _query.Length > 0 ? $"No packs match “{_query}”" : filtered ? "No sets match these filters" : "Nothing here yet";
+        string heading = _query.Length > 0 ? L.F(L.S.EmptyNoMatch, _query) : filtered ? L.S.EmptyNoFilterMatch : L.S.EmptyNothing;
         TextRenderer.DrawText(g, heading, _fonts.Title, title, Theme.Text, centered);
         var hint = new Rectangle(title.X, title.Bottom + (int)Math.Round(6 * s), title.Width, (int)Math.Round(22 * s));
-        string tip = _query.Length > 0 && filtered ? "Try turning filters off, or another name, style or author"
-            : _query.Length > 0 && _view != ViewAll ? "Try All packs, or another name, style or author"
-            : _query.Length > 0 ? "Try a pack name, style or author"
-            : filtered ? "Turn some filters off to see more sets"
-            : "Packs you add appear here";
+        string tip = _query.Length > 0 && filtered ? L.S.EmptyTipBoth
+            : _query.Length > 0 && _view != ViewAll ? L.S.EmptyTipView
+            : _query.Length > 0 ? L.S.EmptyTipQuery
+            : filtered ? L.S.EmptyTipFilters
+            : L.S.EmptyTipAdd;
         TextRenderer.DrawText(g, tip, _fonts.Label, hint, Theme.TextSecondary, centered);
     }
 }

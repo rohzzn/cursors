@@ -11,6 +11,7 @@ namespace Cursors;
 internal sealed class NavItem
 {
     public string View; // see MainWindow.View*; null for a group title
+    public string Key;  // stable id used to re-translate the label when the language changes
     public string Label;
     public int Count;
     public bool Header => View == null;
@@ -101,18 +102,19 @@ internal sealed partial class MainWindow
         var packs = _allCards.Where(c => !c.IsAdd).Select(c => c.Pack).ToList();
         _nav.Clear();
         _communityOrder = null;
-        void Add(string view, string label, int count) => _nav.Add(new NavItem { View = view, Label = label, Count = count });
+        void Add(string view, string key, int count) => _nav.Add(new NavItem { View = view, Key = key, Label = NavLabel(key), Count = count });
+        void AddHeader(string key) => _nav.Add(new NavItem { Key = key, Label = NavLabel(key) });
 
-        _nav.Add(new NavItem { Label = "Library" });
-        Add(ViewAll, "All packs", packs.Count);
-        Add(ViewBuiltIn, "Built-in", packs.Count(IsBuiltIn));
+        AddHeader("library");
+        Add(ViewAll, "all", packs.Count);
+        Add(ViewBuiltIn, "builtin", packs.Count(IsBuiltIn));
         int community = packs.Count(IsCommunity);
-        if (community > 0) Add(ViewCommunity, "Community", community);
-        Add(ViewMine, "My packs", packs.Count(IsMine));
+        if (community > 0) Add(ViewCommunity, "community", community);
+        Add(ViewMine, "mine", packs.Count(IsMine));
 
-        _nav.Add(new NavItem { Label = "Styles" });
+        AddHeader("styles");
         foreach (var style in packs.Where(IsBuiltIn).GroupBy(p => p.Category))
-            Add(StylePrefix + style.Key, style.Key, style.Count());
+            Add(StylePrefix + style.Key, "cat:" + style.Key, style.Count());
 
         if (_nav.All(n => n.View != _view)) _view = ViewAll;
         foreach (var item in _nav) item.Selected.Snap(item.View == _view ? 1 : 0);
@@ -120,6 +122,24 @@ internal sealed partial class MainWindow
         _catalogShown.Clear();
         foreach (var pack in packs)
             if (pack.Kind == PackKind.Catalog && pack.Preview != null) _catalogShown.Add(pack);
+    }
+
+    private static string NavLabel(string key) => key switch
+    {
+        "library" => L.S.NavLibrary,
+        "all" => L.S.NavAll,
+        "builtin" => L.S.NavBuiltIn,
+        "community" => L.S.NavCommunity,
+        "mine" => L.S.NavMine,
+        "styles" => L.S.NavStyles,
+        _ when key != null && key.StartsWith("cat:", StringComparison.Ordinal) => L.Category(key.Substring(4)),
+        _ => key ?? L.S.NavAll,
+    };
+
+    /// <summary>Re-translates sidebar labels in place, keeping selection and scroll state intact.</summary>
+    private void RefreshNavLabels()
+    {
+        foreach (var item in _nav) item.Label = NavLabel(item.Key);
     }
 
     private void SetView(string view)
@@ -278,12 +298,12 @@ internal sealed partial class MainWindow
 
     private string SortLabel => _sort switch
     {
-        SortOrder.TopRated => "Top rated",
-        SortOrder.Name => "Name",
-        _ => "Most downloaded",
+        SortOrder.TopRated => L.S.SortTopRated,
+        SortOrder.Name => L.S.SortName,
+        _ => L.S.SortPopular,
     };
 
-    private string FiltersLabel => ActiveFilterCount > 0 ? "Filters · " + ActiveFilterCount : "Filters";
+    private string FiltersLabel => ActiveFilterCount > 0 ? L.F(L.S.FiltersCount, ActiveFilterCount) : L.S.Filters;
 
     private Rectangle FiltersButtonRect() => HeaderButtonRect(filters: true);
 
@@ -307,10 +327,8 @@ internal sealed partial class MainWindow
 
     private string CountText()
     {
-        string noun = _view == ViewCommunity ? (_viewCount == 1 ? "set" : "sets") : (_viewCount == 1 ? "pack" : "packs");
         int total = _nav.FirstOrDefault(n => n.View == _view)?.Count ?? _viewCount;
-        string shown = _viewCount.ToString("N0", CultureInfo.CurrentCulture);
-        return _viewCount == total ? shown + " " + noun : shown + " of " + total.ToString("N0", CultureInfo.CurrentCulture) + " " + noun;
+        return L.Count(_viewCount, total, _view == ViewCommunity);
     }
 
     private void DrawHeader(Graphics g)
@@ -324,7 +342,7 @@ internal sealed partial class MainWindow
         bool buttons = ViewHasCommunity;
         int x = (int)Math.Round(_gridLeft + 2 * s);
         int limit = buttons ? SortButtonRect().X - (int)Math.Round(16 * s) : (int)Math.Round(_gridRight);
-        string title = _nav.FirstOrDefault(n => n.View == _view)?.Label ?? "All packs";
+        string title = _nav.FirstOrDefault(n => n.View == _view)?.Label ?? L.S.NavAll;
         int titleW = Math.Max(0, Math.Min(TextWidth(title, _fonts.Title) + 2, limit - x));
         TextRenderer.DrawText(g, title, _fonts.Title, new Rectangle(x, top, titleW, bottom - top), Theme.Text, Theme.Background, oneLine);
         int countX = x + titleW + (int)Math.Round(10 * s);
@@ -373,9 +391,9 @@ internal sealed partial class MainWindow
     {
         var r = SortButtonRect();
         int command = ShowMenu(new Point(r.X, r.Bottom + (int)Math.Round(4 * S)),
-            (1, "Most downloaded", _sort == SortOrder.Popular, true),
-            (2, "Top rated first", _sort == SortOrder.TopRated, true),
-            (3, "Name (A to Z)", _sort == SortOrder.Name, true));
+            (1, L.S.MenuSortPopular, _sort == SortOrder.Popular, true),
+            (2, L.S.MenuSortRated, _sort == SortOrder.TopRated, true),
+            (3, L.S.MenuSortName, _sort == SortOrder.Name, true));
         var sort = command switch
         {
             1 => SortOrder.Popular,
@@ -393,12 +411,12 @@ internal sealed partial class MainWindow
     {
         var r = FiltersButtonRect();
         int command = ShowMenu(new Point(r.X, r.Bottom + (int)Math.Round(4 * S)),
-            (1, "Full sets, all 15 cursors", _onlyFull, true),
-            (2, "Animated", _onlyAnimated, true),
-            (3, "Top rated", _onlyTopRated, true),
-            (4, "Open licenses (public domain, CC BY)", _onlyOpen, true),
+            (1, L.S.MenuFilterFull, _onlyFull, true),
+            (2, L.S.MenuFilterAnimated, _onlyAnimated, true),
+            (3, L.S.MenuFilterTopRated, _onlyTopRated, true),
+            (4, L.S.MenuFilterOpen, _onlyOpen, true),
             (0, null, false, true),
-            (5, "Clear filters", false, ActiveFilterCount > 0));
+            (5, L.S.MenuClearFilters, false, ActiveFilterCount > 0));
         switch (command)
         {
             case 1: _onlyFull = !_onlyFull; break;

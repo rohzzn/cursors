@@ -48,8 +48,14 @@ internal static class Program
             return 0;
         }
 
+        // Resolve the UI language and palette before shortcuts and the main window are created;
+        // MainWindow reads the same settings again, which is harmless.
+        var startupSettings = IniFile.Read(AppPaths.SettingsFile);
+        L.Load(startupSettings.TryGetValue("language", out string language) ? language : null);
+        Theme.Load(startupSettings.TryGetValue("theme", out string theme) ? theme : null);
+
         Shortcuts.Ensure();
-        Native.EnableDarkMenus();
+        Native.SetMenuTheme(Theme.IsDark);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         Application.Run(new MainWindow());

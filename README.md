@@ -1,3 +1,5 @@
+**Languages:** [English](README.md) · **[简体中文 README（完整中文说明）](README.zh-CN.md)** · [简体中文更新日志](CHANGELOG.zh-CN.md)
+
 <div align="center">
 
 <img src="docs/logo.png" width="112" alt="Cursors logo">
@@ -11,7 +13,7 @@ A small, native app with 60 built-in cursor styles and 11,548 community cursor s
 [![Latest release](https://img.shields.io/github/v/release/rohzzn/cursors?label=download&color=2b2b2b)](https://github.com/rohzzn/cursors/releases/latest)
 ![Windows 10 and 11](https://img.shields.io/badge/Windows-10%20%7C%2011-2b2b2b)
 ![.NET Framework 4.8](https://img.shields.io/badge/.NET%20Framework-4.8-2b2b2b)
-![App size](https://img.shields.io/badge/app-184%20KB-2b2b2b)
+![App size](https://img.shields.io/badge/app-200%20KB-2b2b2b)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2b2b2b)](LICENSE)
 
 <br>
@@ -31,7 +33,7 @@ A small, native app with 60 built-in cursor styles and 11,548 community cursor s
 - **Your own packs.** Drop a `.zip`, an `install.inf` or loose `.cur`/`.ani` files onto the window. Roles are detected automatically, including from `install.inf` files that list them out of order.
 - **Import from a link.** Paste or drag in a link to a cursor set page, such as one on [rw-designer.com](https://www.rw-designer.com/cursor-library), and Cursors downloads that set into your library with its name, license and source.
 - **Stays applied.** Your choice survives restarts using the same settings as Mouse Properties. No startup entry, no background process.
-- **Light and native.** A single 184 KB exe that opens in well under a second and uses no CPU while idle. It has a dark title bar with Windows 11 snap layouts and handles per-monitor DPI.
+- **Light and native.** A single 200 KB exe that opens in well under a second and uses no CPU while idle. It follows the Windows light/dark setting (or you can pick one), with Windows 11 snap layouts and per-monitor DPI.
 - **Private.** No account and no telemetry. Cursors only goes online to show Community previews and to download a set or link you pick.
 
 ## Download
@@ -95,6 +97,8 @@ Packs with unclear licensing, such as Figma, Minecraft and other game or brand c
 | Sort or filter community sets | Use **Sort** and **Filters** at the top of All packs or Community |
 | Get a community set | Open **Community** and click a card. The set downloads, applies and stays in your library |
 | Go back to the Windows cursors | Click **Restore default** in the title bar |
+| Change the interface language | Click the globe button (中文 / EN / 自动) in the title bar |
+| Change the light/dark theme | Click the sun/moon button in the title bar, or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> |
 | Add your own packs | Use **Add pack → From files…** or <kbd>Ctrl</kbd>+<kbd>O</kbd>, or drag folders and zips onto the window |
 | Add a pack from a link | Use **Add pack → From a link…** or <kbd>Ctrl</kbd>+<kbd>L</kbd>, press <kbd>Ctrl</kbd>+<kbd>V</kbd> with a link copied, or drag a link from your browser onto the window |
 | See credits, the project page or files | Right-click a card |
@@ -213,6 +217,10 @@ This rewrites `packs\catalog.tsv`. The script reads only rw-designer's public li
 src/                    the app (C#, WinForms, custom-drawn)
   Program.cs              entry point, single instance, --restore
   MainWindow*.cs          state, drawing, input, custom title bar
+  Localization.cs         every UI string, Chinese/English text, language state
+  MainWindow.Language.cs  title-bar language button and live switching
+  Theme.cs                light/dark palettes, system theme detection, DPI fonts
+  MainWindow.Theme.cs     title-bar theme button and live Windows theme following
   CursorScheme.cs         applying schemes and detecting the active one
   PackLibrary.cs          Windows, bundled and added packs; import and install
   PackDetection.cs        install.inf parsing and file-name role detection
@@ -226,6 +234,32 @@ docs/                   logo and screenshots
 build.ps1               builds and packages the app
 ```
 </details>
+
+## 中文说明（界面语言与明暗主题）
+
+> 完整的中文文档：[README.zh-CN.md](README.zh-CN.md) · [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md)
+
+### 界面语言
+
+界面内置简体中文和英文。点击标题栏右侧的地球按钮（显示「中文」/「EN」/「自动」）即可随时切换，无需重启：
+
+- **跟随系统语言**：默认选项，Windows 显示语言为中文时自动显示中文界面。
+- **简体中文** / **English**：强制使用指定语言。
+
+选择保存在 `%LOCALAPPDATA%\Cursors\settings.ini` 的 `language` 键（`auto` / `zh-CN` / `en`）。标题栏、侧栏、菜单、筛选与排序、提示消息、空状态、对话框、文件选择器和错误提示都会随语言切换；分类名在 `pack.ini` 中仍使用英文 ID，只翻译显示名称。社区套装的名称、作者和许可信息保持原文。
+
+要新增语言，在 `src/Localization.cs` 中复制一份 `Strings` 实例并覆盖文案，再在 `AppLanguage`、`L.Load` 和 `L.Refresh` 中注册即可。
+
+### 明暗主题
+
+点击标题栏上的太阳/月亮按钮（或按 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>）打开主题菜单：
+
+- **跟随系统主题**（默认）：读取 `HKCU\...\Themes\Personalize\AppsUseLightTheme`，并监听 `WM_SETTINGCHANGE` 的 `ImmersiveColorSet` 广播。在 Windows 设置里切换应用明暗模式时，已打开的窗口会**立即**跟着变，无需重启。
+- **浅色** / **深色**：强制使用指定配色。
+
+选择保存在 `settings.ini` 的 `theme` 键（`auto` / `light` / `dark`）。切换时同步更新手绘界面、搜索框、原生右键菜单、链接导入对话框，以及 DWM 的沉浸式标题栏和窗口边框色。浅色配色是独立的完整调色板（白卡片、深文字、反相的选中态），不是简单地把深色反色。
+
+> 源码含 UTF-8 中文：`Localization.cs` 带 UTF-8 BOM，`build.ps1` 使用 `/codepage:65001`，确保任何系统代码页下都能正确编译。
 
 ## Contributing
 

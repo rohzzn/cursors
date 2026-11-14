@@ -17,6 +17,7 @@ internal static class Native
     public const int WM_NCMOUSELEAVE = 0x02A2;
     public const int WM_DPICHANGED = 0x02E0;
     public const int WM_SETTINGCHANGE = 0x001A;
+    public const int WM_THEMECHANGED = 0x031A;
 
     public const int HTCLIENT = 1;
     public const int HTCAPTION = 2;
@@ -144,33 +145,39 @@ internal static class Native
         return SHLoadIndirectString(source, sb, sb.Capacity, IntPtr.Zero) == 0 ? sb.ToString() : null;
     }
 
-    /// <summary>Opts native popup menus and the system menu into the dark theme (Win10 1903+).</summary>
-    public static void EnableDarkMenus()
+    /// <summary>Opts native popup menus into the same light/dark palette as the app (Win10 1903+).</summary>
+    public static void SetMenuTheme(bool dark)
     {
         if (Build < 18362) return;
         try
         {
-            SetPreferredAppMode(2); // ForceDark
+            // PreferredAppMode: 0 = Default, 1 = AllowDark, 2 = ForceDark, 3 = ForceLight.
+            // ForceLight only exists on newer builds, so fall back to Default when it is rejected.
+            int previous = SetPreferredAppMode(dark ? 2 : 3);
+            if (previous < 0) SetPreferredAppMode(dark ? 2 : 0);
             FlushMenuThemes();
         }
         catch { }
     }
 
-    public static void ApplyDarkFrame(IntPtr hwnd, int captionColorRgb)
+    /// <summary>Applies the immersive frame for either palette; call again after a theme switch.</summary>
+    public static void ApplyFrame(IntPtr hwnd, bool dark, int borderColorRgb, int captionColorRgb)
     {
-        int on = 1;
         try
         {
-            if (Build >= 18362) AllowDarkModeForWindow(hwnd, true);
+            if (Build >= 18362) AllowDarkModeForWindow(hwnd, dark);
         }
         catch { }
+        int on = dark ? 1 : 0;
         // DWMWA_USE_IMMERSIVE_DARK_MODE is 20 on 20H1+, 19 on older builds.
         if (DwmSetWindowAttribute(hwnd, 20, ref on, 4) != 0)
             DwmSetWindowAttribute(hwnd, 19, ref on, 4);
         if (Build >= 22000)
         {
-            int border = captionColorRgb; // COLORREF is 0x00BBGGRR
-            DwmSetWindowAttribute(hwnd, 34, ref border, 4); // DWMWA_BORDER_COLOR
+            int border = borderColorRgb;   // COLORREF is 0x00BBGGRR
+            int caption = captionColorRgb; // DWMWA_CAPTION_COLOR, matches our hand-drawn title bar
+            DwmSetWindowAttribute(hwnd, 34, ref border, 4);  // DWMWA_BORDER_COLOR
+            DwmSetWindowAttribute(hwnd, 35, ref caption, 4); // DWMWA_CAPTION_COLOR
         }
         else
         {

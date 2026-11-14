@@ -220,7 +220,7 @@ internal sealed class PackLibrary
             "aero_ns.cur", "aero_ew.cur", "aero_nwse.cur", "aero_nesw.cur", "aero_move.cur", "aero_up.cur", "aero_link.cur",
             "aero_pin.cur", "aero_person.cur",
         };
-        var pack = new CursorPack { Id = "win:default", Kind = PackKind.Windows, SchemeName = "Windows Default", Label = "Windows Default" };
+        var pack = new CursorPack { Id = "win:default", Kind = PackKind.Windows, SchemeName = "Windows Default", Label = L.S.WindowsDefault };
         for (int i = 0; i < files.Length; i++)
             if (files[i].Length > 0) pack.Values[i] = @"%SystemRoot%\cursors\" + files[i];
         return pack;
@@ -283,7 +283,7 @@ internal sealed class PackLibrary
         values.TryGetValue("name", out var name);
         pack.SchemeName = name ?? "";
         pack.Label = string.IsNullOrWhiteSpace(name) || packs.Any(p => string.Equals(p.Label, name, StringComparison.OrdinalIgnoreCase))
-            ? "Previous cursors"
+            ? L.S.PreviousCursors
             : name;
         pack.Folder = Path.GetDirectoryName(preview);
         packs.Add(pack);
@@ -570,7 +570,7 @@ internal sealed class PackLibrary
     {
         name = Regex.Replace(name ?? "", @"\s+", " ").Trim();
         if (name.Length > 64) name = name.Substring(0, 64).Trim();
-        return name.Length == 0 ? "Cursor pack" : name;
+        return name.Length == 0 ? L.S.UnnamedPack : name;
     }
 
     private static string SafeFolderName(string name)

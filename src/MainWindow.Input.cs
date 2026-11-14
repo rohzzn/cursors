@@ -17,6 +17,8 @@ internal sealed partial class MainWindow
         Sort,
         Filters,
         Restore,
+        Language,
+        Theme,
         Search,
         SearchClear,
         ScrollThumb,
@@ -34,6 +36,8 @@ internal sealed partial class MainWindow
         if (p.Y < TitleBarPx)
         {
             if (RestoreButtonRect().Contains(p)) zone = Zone.Restore;
+            else if (LanguageButtonRect().Contains(p)) zone = Zone.Language;
+            else if (ThemeButtonRect().Contains(p)) zone = Zone.Theme;
             else if (_query.Length > 0 && SearchClearRect().Contains(p)) zone = Zone.SearchClear;
             else if (SearchRect().Contains(p)) zone = Zone.Search;
             return -1;
@@ -92,6 +96,8 @@ internal sealed partial class MainWindow
         _sortHover.Target = zone == Zone.Sort ? 1 : 0;
         _filtersHover.Target = zone == Zone.Filters ? 1 : 0;
         _restoreHover.Target = zone == Zone.Restore ? 1 : 0;
+        _languageHover.Target = zone == Zone.Language ? 1 : 0;
+        _themeHover.Target = zone == Zone.Theme ? 1 : 0;
         _searchClearHover.Target = zone == Zone.SearchClear ? 1 : 0;
         _scrollbarHover.Target = zone is Zone.ScrollThumb or Zone.ScrollTrack || _draggingThumb ? 1 : 0;
         StartAnimation();
@@ -120,6 +126,8 @@ internal sealed partial class MainWindow
         if (_draggingThumb) return;
         UpdateHover(new Point(-1, -1));
         _restoreHover.Target = 0;
+        _languageHover.Target = 0;
+        _themeHover.Target = 0;
         _scrollbarHover.Target = 0;
     }
 
@@ -140,6 +148,12 @@ internal sealed partial class MainWindow
                 break;
             case Zone.Restore:
                 _restorePress.Target = 1;
+                break;
+            case Zone.Language:
+                _languagePress.Target = 1;
+                break;
+            case Zone.Theme:
+                _themePress.Target = 1;
                 break;
             case Zone.Search:
                 FocusSearch();
@@ -194,6 +208,14 @@ internal sealed partial class MainWindow
             case Zone.Restore:
                 _restorePress.Target = 0;
                 if (zone == Zone.Restore) RestoreDefault();
+                break;
+            case Zone.Language:
+                _languagePress.Target = 0;
+                if (zone == Zone.Language) ShowLanguageMenu();
+                break;
+            case Zone.Theme:
+                _themePress.Target = 0;
+                if (zone == Zone.Theme) ShowThemeMenu();
                 break;
             case Zone.SearchClear when zone == Zone.SearchClear:
                 _search.Clear();
@@ -267,6 +289,9 @@ internal sealed partial class MainWindow
                 return true;
             case Keys.Control | Keys.L:
                 PromptImportLink();
+                return true;
+            case Keys.Control | Keys.Shift | Keys.T:
+                ShowThemeMenu();
                 return true;
             case Keys.Control | Keys.V:
                 string clip = null;
