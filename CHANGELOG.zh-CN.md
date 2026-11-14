@@ -2,7 +2,7 @@
 
 Cursors 的所有重要变更都记录在这里。格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，项目采用[语义化版本](https://semver.org/lang/zh-CN/)。
 
-> <a href="CHANGELOG.md">English</a> · <a href="CHANGELOG.zh-CN.md">简体中文</a>　｜　本文件是 [CHANGELOG.md](CHANGELOG.md) 的简体中文版。
+**语言 / Languages:** [简体中文](CHANGELOG.zh-CN.md) · **[English（英文版更新日志）](CHANGELOG.md)**　｜　本文件是英文版更新日志的完整中译。
 
 ## [1.3.0] - 2026-11-14
 

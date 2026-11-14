@@ -2,7 +2,7 @@
 
 All notable changes to Cursors are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
-> <a href="CHANGELOG.md">English</a> · <a href="CHANGELOG.zh-CN.md">简体中文</a> — Simplified Chinese translation available.
+**Languages:** [English](CHANGELOG.md) · **[简体中文（中文版更新日志）](CHANGELOG.zh-CN.md)** — full Simplified Chinese translation available.
 
 ## [1.3.0] - 2026-11-14
 

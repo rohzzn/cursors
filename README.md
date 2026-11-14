@@ -1,3 +1,5 @@
+**Languages:** [English](README.md) · **[简体中文 README（完整中文说明）](README.zh-CN.md)** · [简体中文更新日志](CHANGELOG.zh-CN.md)
+
 <div align="center">
 
 <img src="docs/logo.png" width="112" alt="Cursors logo">
@@ -19,8 +21,6 @@ A small, native app with 60 built-in cursor styles and 11,548 community cursor s
 <img src="docs/screenshot-library.png" alt="The Cursors window showing the Windows and Minimal cursor packs" width="880">
 
 </div>
-
-<p align="center"><a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a></p>
 
 ## Highlights
 

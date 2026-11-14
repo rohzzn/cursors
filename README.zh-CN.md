@@ -1,3 +1,5 @@
+**语言 / Languages:** [简体中文](README.zh-CN.md) · **[English（英文 README）](README.md)** · [中文更新日志](CHANGELOG.zh-CN.md)
+
 <div align="center">
 
 <img src="docs/logo.png" width="112" alt="Cursors 图标">
@@ -19,8 +21,6 @@
 <img src="docs/screenshot-library.png" alt="Cursors 主窗口，显示 Windows 与简约分类的光标包" width="880">
 
 </div>
-
-<p align="center"><a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a></p>
 
 ## 功能亮点
 
